@@ -30,6 +30,8 @@ const AddInfluencerModal = ({
     mode: string
 }) => {
 
+    const readOnly = mode === "read" ? true: false
+
     const handleDelete = () => {
         new Promise((resolve: any, reject: any) => {
             axios.delete("http://localhost:5000/delete_data_influencers", {
@@ -70,7 +72,7 @@ const AddInfluencerModal = ({
             },
         }}
     >
-        <DialogTitle>Add New Influencer</DialogTitle>
+        <DialogTitle>{ mode !== "read" ? "Add New Influencer" : "Influencer"}</DialogTitle>
         <DialogContent>
             <DialogContentText>
                 {/* To subscribe to this website, please enter your email address here. We
@@ -84,6 +86,9 @@ const AddInfluencerModal = ({
                 name="name"
                 onChange={(e) => updateFormData("name", e.target.value)}
                 defaultValue={initData.name}
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -94,6 +99,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.userid}
                 onChange={(e) => updateFormData("userid", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -103,6 +111,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.platform}
                 onChange={(e) => updateFormData("platform", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -112,6 +123,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.country}
                 onChange={(e) => updateFormData("country", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -123,6 +137,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.hashtag}
                 onChange={(e) => updateFormData("hashtag", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -134,6 +151,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.profile}
                 onChange={(e) => updateFormData("profile", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -143,6 +163,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.follower}
                 onChange={(e) => updateFormData("follower", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -152,6 +175,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.total_video}
                 onChange={(e) => updateFormData("total_video", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -161,6 +187,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.recent_30video_view}
                 onChange={(e) => updateFormData("recent_30video_view", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -170,6 +199,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.recent_30video_like}
                 onChange={(e) => updateFormData("recent_30video_like", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -179,6 +211,9 @@ const AddInfluencerModal = ({
                 defaultValue={initData.recent_30video_comment}
                 onChange={(e) => updateFormData("recent_30video_comment", e.target.value)}
                 type="text"
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -190,6 +225,9 @@ const AddInfluencerModal = ({
                 type="text"
                 multiline={true}
                 rows={3}
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
             <TextField
@@ -201,13 +239,19 @@ const AddInfluencerModal = ({
                 type="text"
                 multiline={true}
                 rows={3}
+                inputProps={
+                    {readOnly: readOnly}
+                }
                 fullWidth
             />
         </DialogContent>
         <DialogActions>
             <Button onClick={onClose}>Cancel</Button>
             { mode === "update" && <Button color="secondary" onClick={handleDelete}>Delete</Button>}
-            <Button type="submit">{mode === "add" ? "Add" : "Update"}</Button>
+            {
+                mode !== "read" &&
+                <Button type="submit">{mode === "add" ? "Add" : "Update"}</Button>
+            }
         </DialogActions>
     </Dialog>
 }
