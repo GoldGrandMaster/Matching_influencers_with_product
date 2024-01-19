@@ -45,7 +45,6 @@ def add_data_influencers():
     # Get data from request 
     if request.method == "POST":
         data = request.get_json()
-        print(data)
         newData = models.Influencers(**data).save()
         return 'Influencer Data added to MongoDB'
     else:
@@ -59,6 +58,15 @@ def get_data_influencers():
     # Convert ObjectId to string before JSON serialization
     data_str = json_util.dumps(data)
     return data_str
+
+@app.route('/find_profile', methods=['POST'])
+def get_influencer():
+    _name = request.json.get("name")
+    collection = influencer_collection
+    influencers = models.Influencers.objects(name=_name)
+
+    result = [profile.to_json() for profile in influencers]
+    return json_util.dumps(result[0])
 
 @app.route('/delete_data_influencers', methods=['DELETE'])
 def delete_data_influencers():
@@ -96,12 +104,21 @@ def delete_data_models():
     model.delete()
     return "Model Data deleted"
 
+
+influencer_profiles = []
+influencer_hashtags = []
+influencer_names = []
+influencer_followers = []
+
 @app.route('/gen_hashtags', methods=['GET'])
 def get_hashtags():
+            
     collection = influencer_collection
     data = list(collection.find())
     # Convert ObjectId to string before JSON serialization
     influencer_profiles = [d["profile"] for d in data]
+    influencer_names = [d["name"] for d in data]
+    influencer_followers = [d["follower"] for d in data]
     hashtags = [d["hashtag"] for d in data]
     hashtags_prompt = "Give me top 20 hashtags of this influencer profile. I need only exactly 20 hashtags as answer."
     num_influencers = len(influencer_profiles)
@@ -131,7 +148,30 @@ def get_hashtags():
         
         document.save()
 
-    return "Model run successed"
+    # # Fetch influencer hashtags and followers
+    # influencer_data = list(influencer_collection.find({}, {
+    #     "total_hashtag": 1,
+    #     "follower": 1,
+    #     "name": 1,
+    #     "_id": 0
+    # }))
+
+    # # Separate hashtags, followers, and names into their own lists
+    # influencer_hashtags = []
+    # influencer_followers = []
+    # influencer_names = []
+    # for influencer in influencer_data:
+    #     hashtags = influencer.get('total_hashtag', [])
+    #     influencer_hashtags.extend(hashtags)
+
+    #     follower = influencer.get('follower', "")
+    #     if follower:
+    #         influencer_followers.append(follower)
+
+    #     name = influencer.get('name', "")
+    #     if name:
+    #         influencer_names.append(name)
+    return  "generated success"
 
 @app.route('/add_data_products', methods=['POST']) 
 def add_data_products(): 
@@ -143,31 +183,25 @@ def add_data_products():
   
     return 'Product Data added to MongoDB'
 
-def event_stream():
-    while True:
-        time.sleep(1)  # Delay for demonstration; adjust as needed
-        global history
-        global is_history_sent
-        is_history_sent = True
-        yield history
+# def event_stream():
+#     while True:
+#         time.sleep(1)  # Delay for demonstration; adjust as needed
+#         global history
+#         global is_history_sent
+#         is_history_sent = True
+#         yield history
 
-@app.route('/history')
-def stream():
-    return Response(event_stream(), content_type='text/event-stream')
+# @app.route('/history')
+# def stream():
+#     return Response(event_stream(), content_type='text/event-stream')
 
 @app.route('/run', methods=['POST']) 
 def run(): 
     if request.method == "POST":
-        global history
-        global is_history_sent
-        history = ''
         data = request.get_json()
         product_detail = data['productdetails']
         model_name = data['curModel']
         print(product_detail)
-        # history.append(str(product_detail))
-        history += str(product_detail) + '\n'
-        is_history_sent = False
         
         model_data = model_collection.find_one({"name": model_name})
 
@@ -187,12 +221,19 @@ def run():
         print(product_hashtags)
 
         # Fetch influencer hashtags and followers
-        influencer_data = list(influencer_collection.find({}, {"total_hashtag": 1, "follower": 1, "name": 1, "_id": 0}))
+        influencer_data = list(influencer_collection.find({}, {
+            "total_hashtag": 1,
+            "follower": 1,
+            "name": 1,
+            "profile": 1,
+            "_id": 0
+        }))
 
         # Separate hashtags, followers, and names into their own lists
         influencer_hashtags = []
         influencer_followers = []
         influencer_names = []
+        influencer_profiles = []
         for influencer in influencer_data:
             hashtags = influencer.get('total_hashtag', [])
             influencer_hashtags.extend(hashtags)
@@ -205,10 +246,42 @@ def run():
             if name:
                 influencer_names.append(name)
 
+            profile = influencer.get('profile', "")
+            if profile:
+                influencer_profiles.append(profile)
+
         ranking = utils.ranking(product_hashtags, influencer_hashtags, influencer_followers, influencer_names)
-        return [{'name': rank, 'reason': 'This ranking is calculated by followers of influencers and cosine similarity of hashtags between influencers and product'} for rank in ranking]
+        reasons = utils.reason_generating(product_detail, influencer_profiles)
+        return [{
+            'name': rank,
+            'reason': reason
+            # 'reason': 'This ranking is calculated by followers of influencers and cosine similarity of hashtags between influencers and product'
+        } for rank, reason in zip(ranking, reasons)]
     else:
         return jsonify(data)
+
+@app.route('/generate_email', methods=['POST']) 
+def email_generating(): 
+    data = request.get_json()
+    influencer_name = data['name']
+    product_detail = data['productdetails']
+    model_name = data['curModel']
+    # print(influencer_name)
+    # print(product_detail)
+    # print(model_name)
+    # influencer_name = 'ParentingPro_03'
+    influencer_data = influencer_collection.find_one({"name": influencer_name})
+    mail = utils.email_generating(product_detail, str(influencer_data))
+    # print(mail)
+    # subject = ""
+    # content = ""
+    subject, content = utils.email_split(mail)
+    print(subject)
+    print(content)
+    return jsonify({
+        'subject': subject,
+        'content': content
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

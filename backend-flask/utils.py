@@ -62,9 +62,10 @@ def parse_follower_count(follower):
     else:
         return int(follower)
     
+# spacy.cli.download('en_core_web_md')
+# nlp = spacy.load("en_core_web_md")
+
 def ranking(product_hashtags, influencer_hashtags, influencer_followers, influencer_names):
-    spacy.cli.download('en_core_web_md')
-    nlp = spacy.load("en_core_web_md")
 
     product_embedded_vec = embedded_vec(product_hashtags)
     influencer_embedded_data = []
@@ -121,3 +122,47 @@ def ranking(product_hashtags, influencer_hashtags, influencer_followers, influen
         final_ranking.append(influencer_names[i])
     
     return final_ranking
+
+def reason_generating(product_detail, influencer_details):
+    print("generating reasons of ranking...")
+    reasons = []
+    prompt = "These are product detail and one influencer detail of my influencer pool. This influencer is detected as top matched with my product. Give me the summarized reason."
+
+    for i in range(len(influencer_details)):
+        # print(influencer_details[i])
+        content = []
+        content = 'Product detail:\n' + product_detail + 'Influencer detail:\n' + influencer_details[i]
+        reasons.append(generate_openai(prompt, content))
+    
+    print("Reason generating successed!!")
+    return reasons
+
+def email_generating(product_detail, influencer_datas):
+    prompt = "These are product detail and one influencer detail of my influencer pool. I'm going to send an email to this influencer because best matched with my product. Give me the sample email to send him/her. Please give me only answer."
+    content = []
+    content = 'Product detail: \n' + product_detail + 'Influencer detail: \n' + influencer_datas
+    generated_email = generate_openai(prompt, content)  
+    return generated_email
+
+def email_split(email_string):
+    # Split the email by lines
+    lines = email_string.split('\n')
+
+    # # Initialize variables to store the subject and content
+    subject = ""
+    content = ""
+
+    # Iterate through the lines to extract subject and content
+    for line in lines:
+        if line.startswith("Subject:"):
+            subject = line[len("Subject:"):].strip()
+        else:
+            content += line + "\n"
+
+    # Remove leading and trailing whitespace from content
+    content = content.strip()
+
+    # Print the extracted subject and content
+    # print("Subject:", subject)
+    # print("\nContent:", content)
+    return subject, content
