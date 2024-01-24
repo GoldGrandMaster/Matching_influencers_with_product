@@ -8,6 +8,7 @@ import time
 
 from flask_cors import CORS
 from flask import jsonify
+from flask_socketio import SocketIO
 
 from bson import json_util
 
@@ -20,8 +21,7 @@ db = client['MetajointCorp']
 influencer_collection = db['influencers'] 
 product_collection = db['products']
 model_collection = db['models']
-history = ''
-is_history_sent = False
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Set up the default MongoDB connection for Flask-MongoEngine
 mongoengine.connect('MetajointCorp', host='mongodb://localhost:27017/')
@@ -202,23 +202,28 @@ def run():
         product_detail = data['productdetails']
         model_name = data['curModel']
         print(product_detail)
+        socketio.emit('log_history', {'data': product_detail})
         
         model_data = model_collection.find_one({"name": model_name})
 
         persona = utils.generate_openai(model_data['prompt2'], product_detail)
         print(persona)
+        socketio.emit('log_history', {'data': persona})
         # history.append(str(persona))
 
         product_hashtags_temp = utils.generate_openai(model_data['prompt3'], persona)
         print(product_hashtags_temp)
+        socketio.emit('log_history', {'data': product_hashtags_temp})
         # history.append(str(product_hashtags_temp))
 
         product_hashtags = re.findall(r'#\w+', product_hashtags_temp)
         print(product_hashtags)
+        socketio.emit('log_history', {'data': product_hashtags})
         # history.append(str(product_hashtags))
 
         product_hashtags = [word[1:] for word in product_hashtags]
         print(product_hashtags)
+        socketio.emit('log_history', {'data': product_hashtags})
 
         # Fetch influencer hashtags and followers
         influencer_data = list(influencer_collection.find({}, {
@@ -250,13 +255,10 @@ def run():
             if profile:
                 influencer_profiles.append(profile)
 
-        ranking = utils.ranking(product_hashtags, influencer_hashtags, influencer_followers, influencer_names)
-        reasons = utils.reason_generating(product_detail, influencer_profiles)
+        ranking = utils.ranking(product_hashtags, influencer_hashtags, influencer_followers, influencer_names, socketio)
         return [{
-            'name': rank,
-            'reason': reason
-            # 'reason': 'This ranking is calculated by followers of influencers and cosine similarity of hashtags between influencers and product'
-        } for rank, reason in zip(ranking, reasons)]
+            'name': rank
+        } for rank in ranking]
     else:
         return jsonify(data)
 
@@ -271,7 +273,9 @@ def email_generating():
     # print(model_name)
     # influencer_name = 'ParentingPro_03'
     influencer_data = influencer_collection.find_one({"name": influencer_name})
-    mail = utils.email_generating(product_detail, str(influencer_data))
+    mail = utils.email_generating(
+        product_detail,
+        str(influencer_data))
     # print(mail)
     # subject = ""
     # content = ""
@@ -283,6 +287,25 @@ def email_generating():
         'content': content
     })
 
+@app.route('/generate_reason', methods=['POST'])
+def reason_generating():
+    data = request.get_json()
+    product_detail = data['product']
+    influencer_name = data['name']
+    influencer_data = influencer_collection.find_one({"name": influencer_name})
+    reason = utils.reason_generating(
+        product_detail,
+        str(influencer_data))
+    return jsonify(reason)
+
+@socketio.on('connect')
+def on_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def on_disconnect():
+    print('Client disconnected')
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=True)
   

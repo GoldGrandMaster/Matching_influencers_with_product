@@ -10,88 +10,96 @@ import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import AddInfluencerModal from '../influencer/AddModal';
-import axios from 'axios';
+import axios, { all } from 'axios';
 import SendEmailModal from './SendEmailModal';
+import io from 'socket.io-client';
+
+const backend_url = "http://170.130.55.228:5000";
+const socket = io('http://170.130.55.228:5000');
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
     ...theme.typography.body2,
     padding: theme.spacing(1),
     color: theme.palette.text.secondary,
-    height: '100%'
+    height: '100%',
+    width: "100%",
+    overflowY: "auto",
+    overflowX: "hidden"
 }));
-
 const Grid = styled(MuiGrid)(({ theme }) => ({
     height: '100%',
 }))
 
-const initialRanks = [
-    {
-        no: 1,
-        name: 'agron kercishta',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 2,
-        name: 'oleksii krupiak',
-        reason: 'He is best matching person. He is most matching in this field',
-        isOpened: false
-    },
-    {
-        no: 3,
-        name: 'william holloway',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 4,
-        name: 'antonio cello',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 5,
-        name: 'richard scott',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 1,
-        name: 'agron kercishta',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 2,
-        name: 'oleksii krupiak',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 3,
-        name: 'william holloway',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 4,
-        name: 'antonio cello',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-    {
-        no: 5,
-        name: 'richard scott',
-        reason: 'He is best matching person.',
-        isOpened: false
-    },
-]
+// const initialRanks = [
+//     {
+//         no: 1,
+//         name: 'agron kercishta',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 2,
+//         name: 'oleksii krupiak',
+//         reason: 'He is best matching person. He is most matching in this field',
+//         isOpened: false
+//     },
+//     {
+//         no: 3,
+//         name: 'william holloway',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 4,
+//         name: 'antonio cello',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 5,
+//         name: 'richard scott',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 1,
+//         name: 'agron kercishta',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 2,
+//         name: 'oleksii krupiak',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 3,
+//         name: 'william holloway',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 4,
+//         name: 'antonio cello',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+//     {
+//         no: 5,
+//         name: 'richard scott',
+//         reason: 'He is best matching person.',
+//         isOpened: false
+//     },
+// ]
 
 const Home = (props: any) => {
-    const [message, setMessage] = React.useState('Here is log history.');
-    const [ranks, setRanks] = React.useState(initialRanks.slice(0, 5));
+    const [message, setMessage] = React.useState('');
+    const [ranks, setRanks] = React.useState<any[]>([]);//initialRanks.slice(0, 5));
     const [ranksNum, setRanksNum] = React.useState(5);
+    const [allranks, setAllRanks] = React.useState<any[]>([]);
+    const [reasons, setReasons] = React.useState<any>({});
     const [curModel, setCurModel] = React.useState('');
     const [models, setModels] = React.useState<any[]>([]);
     const [description, setDescription] = React.useState('');
@@ -102,6 +110,7 @@ const Home = (props: any) => {
     const [dialInitData, setDialogInitData] = React.useState({});
     const [curName, setCurName] = React.useState('');
 
+    const ref = React.useRef(null);
     const navigate = useNavigate();
 
     const onHistoryReceive = (event: any) => {
@@ -110,12 +119,25 @@ const Home = (props: any) => {
     }
 
     React.useEffect(() => {
+        socket.on('log_history', data => {
+          console.log('Data received from server:', data);
+          ref.current.innerHTML += "<br />" + data.data; 
+          setMessage(`${message}${data.data}`);
+        });
+    
+        // Cleanup on unmount
+        return () => {
+          socket.off('log_history');
+        };
+      }, []);
+
+    React.useEffect(() => {
         // axios.get("/").then(response => {
         //     setMessage(response.data);
         // })
         getModelData();
 
-        const source = new EventSource('http://127.0.0.1:5000/history');
+        const source = new EventSource(`${backend_url}/history`);
         historyRef.current = source;
         if (historyRef.current) {
             historyRef.current.addEventListener('message', onHistoryReceive)
@@ -134,7 +156,7 @@ const Home = (props: any) => {
 
     const getModelData = () => {
         new Promise((resolve, reject) => {
-            axios.get("http://127.0.0.1:5000/get_data_models")
+            axios.get(`${backend_url}/get_data_models`)
                 .then(res => {
                     setModels([...res.data]);
                     setCurModel(res.data[0].name)
@@ -143,18 +165,23 @@ const Home = (props: any) => {
     }
 
     const onHandleRun = () => {
+        ref.current.innerHTML = '';
         new Promise((resolve, reject) => {
-            axios.post("http://127.0.0.1:5000/run", { productdetails, curModel })
+            axios.post(`${backend_url}/run`, { productdetails, curModel })
                 .then(res => {
                     console.log('Running result', res.data)
                     setRanks(res.data.slice(0, ranksNum));
+                    setAllRanks([...res.data]);
                 })
         })
     }
 
     const generateEmail = () => {
         return new Promise((resolve, reject) => {
-            axios.post("http://127.0.0.1:5000/generate_email", { name: curName, productdetails, curModel })
+            axios.post(`${backend_url}/generate_email`, {
+                name: curName,
+                productdetails, curModel
+            })
                 .then(res => {
                     // console.log(res.data);
                     resolve(res.data)
@@ -164,7 +191,20 @@ const Home = (props: any) => {
 
     const handleToggleReason = (idx: number) => {
         let tmp = [...ranks];
-        tmp[idx].isOpened = !tmp[idx].isOpened
+        if(reasons[tmp[idx].name])
+            tmp[idx].isOpened = !tmp[idx].isOpened
+        else{
+            new Promise((resolve, reject) => {
+                axios.post(`${backend_url}/generate_reason`, {
+                    product: productdetails,
+                    name: tmp[idx].name
+                })
+                .then(res => {
+                    setReasons({...reasons, [tmp[idx].name]: res.data });
+                    tmp[idx].isOpened = !tmp[idx].isOpened;
+                })
+            })
+        }
         console.log(idx, tmp);
         setRanks(tmp);
     }
@@ -177,7 +217,7 @@ const Home = (props: any) => {
     const handleNameClick = (name: string) => {
         console.log(name);
         new Promise((resolve, reject) => {
-            axios.post("http://127.0.0.1:5000/find_profile", { name })
+            axios.post(`${backend_url}/find_profile`, { name })
                 .then(res => {
                     let data = JSON.parse(res.data);
                     // setRanks(res.data.slice(0, ranksNum));
@@ -190,7 +230,7 @@ const Home = (props: any) => {
     return (
         <>
             <Paper sx={{ flexGrow: 1 }}>
-                <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                <Grid container rowSpacing={1} style={{maxHeight: "90vh"}} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
                     <Grid xs={4}>
                         <Item className='flex flex-col gap-y-2'>
                             <div className="mb-2">
@@ -233,9 +273,9 @@ const Home = (props: any) => {
                     <Grid xs={4}>
                         <Item>
                             <Button size='medium' className='float-right' variant="contained" color='secondary' onClick={onHandleRun}>Run</Button>
-                            <h1>Log</h1>
-                            <div>
-                                {message}
+                            <h1>Log History</h1>
+                            <div ref={ref}>
+
                             </div>
                         </Item>
                     </Grid>
@@ -251,7 +291,7 @@ const Home = (props: any) => {
                                     value={ranksNum}
                                     onChange={(e: any) => {
                                         setRanksNum(e.target.value);
-                                        setRanks(initialRanks.slice(0, e.target.value));
+                                        setRanks([...allranks.slice(0, e.target.value)]);
                                     }}
                                 />
                             </div>
@@ -264,12 +304,12 @@ const Home = (props: any) => {
                                                 <span className="cursor-pointer" onClick={() => handleNameClick(rank.name)}>{index + 1}. {rank.name}</span>
                                                 <div className="flex gap-x-2">
                                                     <Button size='small' variant="outlined"
-                                                        onClick={() => handleToggleReason(index)}>...</Button>
+                                                        onClick={() => handleToggleReason(index)}>Reason Generate</Button>
                                                     <Button size='small' variant="outlined"
-                                                        onClick={() => handleToggleEmailModal(rank.name)}>Send</Button>
+                                                        onClick={() => handleToggleEmailModal(rank.name)}>Email Send</Button>
                                                 </div>
                                             </div>
-                                            <div style={{ display: rank.isOpened ? "flex" : "none" }} className="ml-4">{rank.reason}</div>
+                                            <div style={{ display: rank.isOpened ? "flex" : "none" }} className="ml-4">{reasons[rank.name]}</div>
 
                                         </div>)
                                 }
