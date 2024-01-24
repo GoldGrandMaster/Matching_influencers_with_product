@@ -13,7 +13,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
 import AddInfluencerModal from './AddModal';
 import axios from 'axios';
-
+const backend_url = "http://170.130.55.228:5000";
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
@@ -206,7 +206,7 @@ export default function StickyHeadTable() {
 
   const handleGenHashtags = () => {
     new Promise((resolve, reject) => {
-      axios.get("http://127.0.0.1:5000/gen_hashtags")
+      axios.get(`${backend_url}/gen_hashtags`)
         .then(res => {
           getInfluencerData()
         })
@@ -216,7 +216,7 @@ export default function StickyHeadTable() {
 
   const getInfluencerData = () => {
     new Promise((resolve, reject) => {
-      axios.get("http://127.0.0.1:5000/get_data_influencers")
+      axios.get(`${backend_url}/get_data_influencers`)
         .then(res => {
           let idx:number = 1;
           for(let row of res.data) {

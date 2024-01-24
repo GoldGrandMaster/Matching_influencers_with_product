@@ -73,5 +73,3 @@ Open http://localhost:5173 with your favorite browser to see your project.
 You have access to the whole code source if you need further customization. The provided code is only example for you to start your project. The sky is the limit 🚀.
 
 ---
-
-Made with ♥ by [TrongSon](https://www.facebook.com/profile.php?id=100032736788526&locale=vi_VN)
