@@ -30,15 +30,15 @@ mongoengine.connect('MetajointCorp', host='mongodb://localhost:27017/')
 def hello():
     return 'Hello, World!'
 
-@app.route('/add_data', methods=['POST']) 
-def add_data(): 
-    # Get data from request 
-    data = request.json 
+# @app.route('/add_data', methods=['POST']) 
+# def add_data(): 
+#     # Get data from request 
+#     data = request.json 
   
-    # Insert data into MongoDB 
-    model_collection.insert_one(data) 
+#     # Insert data into MongoDB 
+#     model_collection.insert_one(data) 
   
-    return 'Model Data added to MongoDB'
+#     return 'Model Data added to MongoDB'
 
 @app.route('/add_data_influencers', methods=['POST']) 
 def add_data_influencers(): 
@@ -50,6 +50,25 @@ def add_data_influencers():
     else:
         data = models.Influencers().get()
         return jsonify(data)
+    
+@app.route('/update_data_influencers', methods=['POST'])
+def update_data_influencers():
+    if request.method == "POST":
+        try:
+            data = request.get_json()  # Get JSON data from the request
+            model = models.Influencers.objects(id=data["_id"]).first()  # Retrieve the existing product
+
+            if not model:
+                return jsonify({'error': 'Influencer not found'}), 404
+
+            # Update the product fields with the new data
+            for key, value in data["data"].items():
+                setattr(model, key, value)
+
+            model.save()  # Save the updated product
+            return jsonify({'message': 'Influencer updated successfully', 'influencer': str(model)}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 @app.route('/get_data_influencers', methods=['GET'])
 def get_data_influencers():
@@ -78,6 +97,52 @@ def delete_data_influencers():
     influencer.delete()
     return "Influencer Data deleted"
 
+@app.route('/add_data_products', methods=['POST']) 
+def add_data_products(): 
+    if request.method == "POST":
+        data = request.get_json()
+        print(data)
+        newData = models.Products(**data).save()
+        return 'Product Data added to MongoDB'
+    else:
+        data = models.Products().get()
+        return jsonify(data)
+
+@app.route('/update_data_products', methods=['POST'])
+def update_data_products():
+    if request.method == "POST":
+        try:
+            data = request.get_json()  # Get JSON data from the request
+            model = models.Products.objects(id=data["_id"]).first()  # Retrieve the existing product
+
+            if not model:
+                return jsonify({'error': 'Product not found'}), 404
+
+            # Update the product fields with the new data
+            for key, value in data["data"].items():
+                setattr(model, key, value)
+
+            model.save()  # Save the updated product
+            return jsonify({'message': 'Product updated successfully', 'product': str(model)}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+@app.route('/get_data_products', methods=['GET'])
+def get_data_products():
+    collection = product_collection
+    data = list(collection.find())
+    data_str = json_util.dumps(data)
+    return data_str
+
+@app.route('/delete_data_products', methods=['DELETE'])
+def delete_data_products():
+    data = request.get_json()
+    _id = data["_id"]
+    model = models.Products.objects.get(id=_id)
+    model.delete()
+    return "Product Data deleted"
+
 @app.route('/add_data_models', methods=['POST']) 
 def add_data_models(): 
     if request.method == "POST":
@@ -88,6 +153,25 @@ def add_data_models():
     else:
         data = models.Models().get()
         return jsonify(data)
+
+@app.route('/update_data_models', methods=['POST'])
+def update_data_models():
+    if request.method == "POST":
+        try:
+            data = request.get_json()  # Get JSON data from the request
+            model = models.Models.objects(id=data["_id"]).first()  # Retrieve the existing product
+
+            if not model:
+                return jsonify({'error': 'Model not found'}), 404
+
+            # Update the product fields with the new data
+            for key, value in data["data"].items():
+                setattr(model, key, value)
+
+            model.save()  # Save the updated product
+            return jsonify({'message': 'Model updated successfully', 'model': str(model)}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 @app.route('/get_data_models', methods=['GET'])
 def get_data_models():
@@ -173,45 +257,35 @@ def get_hashtags():
     #         influencer_names.append(name)
     return  "generated success"
 
-@app.route('/add_data_products', methods=['POST']) 
-def add_data_products(): 
-    # Get data from request 
-    data = request.json 
-  
-    # Insert data into MongoDB
-    product_collection.insert_one(data) 
-  
-    return 'Product Data added to MongoDB'
-
-# def event_stream():
-#     while True:
-#         time.sleep(1)  # Delay for demonstration; adjust as needed
-#         global history
-#         global is_history_sent
-#         is_history_sent = True
-#         yield history
-
-# @app.route('/history')
-# def stream():
-#     return Response(event_stream(), content_type='text/event-stream')
 
 @app.route('/run', methods=['POST']) 
 def run(): 
     if request.method == "POST":
         data = request.get_json()
-        product_detail = data['productdetails']
-        model_name = data['curModel']
+        # product_detail = data['productdetails']
+        # print(product_detail)
+        product_detail = ''
+        products = data['products']
+        for ele in products:
+            product_data = product_collection.find_one({"asin": ele})
+            product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
+            # print(product_data)
+            # print('---------------------')
+
         print(product_detail)
+        model_user = data['curModel']
         socketio.emit('log_history', {'data': product_detail})
         
-        model_data = model_collection.find_one({"name": model_name})
+        print('@@@@@@@@@@@@@@@')
+        model_data = model_collection.find_one({"user": model_user})
+        # print(model_data['influencer_hashtag_gen'])
 
-        persona = utils.generate_openai(model_data['prompt2'], product_detail)
+        persona = utils.generate_openai(model_data['buyer_persona_gen'], product_detail)
         print(persona)
         socketio.emit('log_history', {'data': persona})
         # history.append(str(persona))
 
-        product_hashtags_temp = utils.generate_openai(model_data['prompt3'], persona)
+        product_hashtags_temp = utils.generate_openai(model_data['persona_hashtag_gen'], persona)
         print(product_hashtags_temp)
         socketio.emit('log_history', {'data': product_hashtags_temp})
         # history.append(str(product_hashtags_temp))
@@ -266,20 +340,23 @@ def run():
 def email_generating(): 
     data = request.get_json()
     influencer_name = data['name']
-    product_detail = data['productdetails']
-    model_name = data['curModel']
-    # print(influencer_name)
-    # print(product_detail)
-    # print(model_name)
-    # influencer_name = 'ParentingPro_03'
+    product_detail = ''
+    products = data['products']
+    for ele in products:
+        product_data = product_collection.find_one({"asin": ele})
+        product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
+
+    model_user = data['curModel']
+    model_data = model_collection.find_one({"user": model_user})
+    prompt = model_data['email_write']
+    
     influencer_data = influencer_collection.find_one({"name": influencer_name})
-    mail = utils.email_generating(
+    email = utils.email_generating(
+        prompt,
         product_detail,
         str(influencer_data))
-    # print(mail)
-    # subject = ""
-    # content = ""
-    subject, content = utils.email_split(mail)
+    
+    subject, content = utils.email_split(email)
     print(subject)
     print(content)
     return jsonify({
@@ -287,13 +364,44 @@ def email_generating():
         'content': content
     })
 
+# @app.route('/regenerate_email', methods=['POST']) 
+# def email_regenerating(): 
+#     data = request.get_json()
+    
+#     cur_content = data['email_content']
+#     model_user = data['curModel']
+#     model_data = model_collection.find_one({"user": model_user})
+#     prompt = model_data['email_rewrite']
+    
+#     new_email = utils.email_regenerating(
+#         prompt, cur_content)
+    
+#     subject, content = utils.email_split(mail)
+#     print(subject)
+#     print(content)
+#     return jsonify({
+#         'subject': subject,
+#         'content': content
+#     })
+
 @app.route('/generate_reason', methods=['POST'])
 def reason_generating():
     data = request.get_json()
-    product_detail = data['product']
+    product_detail = ''
+    products = data['product']
+    for ele in products:
+        product_data = product_collection.find_one({"asin": ele})
+        product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
+
     influencer_name = data['name']
     influencer_data = influencer_collection.find_one({"name": influencer_name})
+
+    model_user = data['curModel']
+    model_data = model_collection.find_one({"user": model_user})
+    prompt = model_data['reason_gen']
+    
     reason = utils.reason_generating(
+        prompt,
         product_detail,
         str(influencer_data))
     return jsonify(reason)

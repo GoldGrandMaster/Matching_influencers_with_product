@@ -186,6 +186,7 @@ export default function StickyHeadTable() {
   const [rows, setRows] = React.useState<Data[]>([]);
   const [dialInitData, setDialogInitData] = React.useState<Data>({});
   const [dialMode, setDialMode] = React.useState<string>("add");
+  const [searchword, setSearchword] = React.useState<string>("");
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -246,6 +247,8 @@ export default function StickyHeadTable() {
             </SearchIconWrapper>
             <StyledInputBase
               placeholder="Search…"
+              value={searchword}
+              onChange={e => setSearchword(e.target.value)}
               inputProps={{ 'aria-label': 'search' }}
             />
           </Search>
@@ -267,6 +270,13 @@ export default function StickyHeadTable() {
             </TableHead>
             <TableBody>
               {rows
+                .filter((row: any) => {
+                  for(let i of Object.values(row)){
+                    if(String(i).toUpperCase().search(searchword.toUpperCase()) >= 0)
+                      return true;
+                  }
+                  return false;
+                })
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row: any) => {
                   return (

@@ -32,9 +32,11 @@ const AddInfluencerModal = ({
 
     const readOnly = mode === "read" ? true: false
 
+    const [data, setData] = useState<any>({})
+
     const handleDelete = () => {
         new Promise((resolve: any, reject: any) => {
-            axios.delete("http://localhost:5000/delete_data_influencers", {
+            axios.delete("http://170.130.55.228:5000/delete_data_influencers", {
                 data: {_id: initData["_id"]["$oid"]},
         })
             .then((res) => {
@@ -45,10 +47,24 @@ const AddInfluencerModal = ({
         })
     }
 
+    const handleUpdate = () => {
+        let formdata = {...initData, ...data};
+        formdata._id = undefined;
+        console.log(formdata);
+        new Promise((resolve: any, reject: any) => {
+            axios.post(`http://170.130.55.228:5000/update_data_influencers`, {data:formdata, _id:initData["_id"]["$oid"]})
+            .then(res => {
+                console.log(res.data);
+                resolve();
+            })
+            .catch(err => {reject()})
+        })
+    }
+
     const updateFormData = (field: String, value: String) => {
-        let newData = {...formData};
+        let newData = {...data};
         newData[field] = value;
-        setFormData(newData);
+        setData(newData);
     }
 
     return <Dialog
@@ -62,7 +78,7 @@ const AddInfluencerModal = ({
                 const formJson = Object.fromEntries((formData as any).entries());
 
                 new Promise((resolve: any, reject: any) => {
-                    axios.post("http://localhost:5000/add_data_influencers", formJson)
+                    axios.post("http://170.130.55.228:5000/add_data_influencers", formJson)
                     .then((res) => {
                         console.log(res.data);
                         resolve();
@@ -250,7 +266,7 @@ const AddInfluencerModal = ({
             { mode === "update" && <Button color="secondary" onClick={handleDelete}>Delete</Button>}
             {
                 mode !== "read" &&
-                <Button type="submit">{mode === "add" ? "Add" : "Update"}</Button>
+                <Button onClick={mode === "add" ? undefined : handleUpdate} type={mode === "add" ? "submit" : "button"}>{mode === "add" ? "Add" : "Update"}</Button>
             }
         </DialogActions>
     </Dialog>

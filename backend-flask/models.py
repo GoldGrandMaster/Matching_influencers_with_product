@@ -18,13 +18,19 @@ class Influencers(Document):
     total_hashtag = ListField()
 
 class Models(Document):
-    name = StringField(max_length=60, required=True, unique=True)
-    prompt1 = StringField()
-    prompt2 = StringField()
-    prompt3 = StringField()
+    user = StringField(max_length=60, required=True, unique=True)
+    influencer_hashtag_gen = StringField()
+    buyer_persona_gen = StringField()
+    persona_hashtag_gen = StringField()
+    reason_gen = StringField()
+    email_write = StringField()
+    email_rewrite = StringField()
     description = StringField()
 
 class Products(Document):
+    asin = StringField(max_length=20, required=True, unique=True)
+    link = StringField()
+    category = StringField()
     title = StringField()
     detail = StringField()
 

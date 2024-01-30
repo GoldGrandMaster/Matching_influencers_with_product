@@ -13,6 +13,7 @@ import AddInfluencerModal from '../influencer/AddModal';
 import axios, { all } from 'axios';
 import SendEmailModal from './SendEmailModal';
 import io from 'socket.io-client';
+import StickyHeadTable from './productdetails';
 
 const backend_url = "http://170.130.55.228:5000";
 const socket = io('http://170.130.55.228:5000');
@@ -109,6 +110,7 @@ const Home = (props: any) => {
     const [emailOpen, setEmailOpen] = React.useState(false)
     const [dialInitData, setDialogInitData] = React.useState({});
     const [curName, setCurName] = React.useState('');
+    const [products, setProducts] = React.useState([]);
 
     const ref = React.useRef(null);
     const navigate = useNavigate();
@@ -151,7 +153,7 @@ const Home = (props: any) => {
     }, []);
 
     React.useEffect(() => {
-        if (curModel != '') setDescription(models.filter(i => i.name == curModel)[0].description);
+        if (curModel != '') setDescription(models.filter(i => i.user == curModel)[0].description);
     }, [curModel])
 
     const getModelData = () => {
@@ -159,7 +161,7 @@ const Home = (props: any) => {
             axios.get(`${backend_url}/get_data_models`)
                 .then(res => {
                     setModels([...res.data]);
-                    setCurModel(res.data[0].name)
+                    setCurModel(res.data[0].user)
                 })
         })
     }
@@ -167,7 +169,7 @@ const Home = (props: any) => {
     const onHandleRun = () => {
         ref.current.innerHTML = '';
         new Promise((resolve, reject) => {
-            axios.post(`${backend_url}/run`, { productdetails, curModel })
+            axios.post(`${backend_url}/run`, { products, curModel })
                 .then(res => {
                     console.log('Running result', res.data)
                     setRanks(res.data.slice(0, ranksNum));
@@ -180,7 +182,8 @@ const Home = (props: any) => {
         return new Promise((resolve, reject) => {
             axios.post(`${backend_url}/generate_email`, {
                 name: curName,
-                productdetails, curModel
+                products,
+                curModel
             })
                 .then(res => {
                     // console.log(res.data);
@@ -189,6 +192,19 @@ const Home = (props: any) => {
         })
     }
 
+    // const regenerateEmail = () => {
+    //     return new Promise((resolve, reject) => {
+    //         axios.post(`${backend_url}/regenerate_email`, {
+    //             email_content,
+    //             curModel
+    //         })
+    //             .then(res => {
+    //                 // console.log(res.data);
+    //                 resolve(res.data)
+    //             }).catch(err => reject(err))
+    //     })
+    // }
+
     const handleToggleReason = (idx: number) => {
         let tmp = [...ranks];
         if(reasons[tmp[idx].name])
@@ -196,8 +212,9 @@ const Home = (props: any) => {
         else{
             new Promise((resolve, reject) => {
                 axios.post(`${backend_url}/generate_reason`, {
-                    product: productdetails,
-                    name: tmp[idx].name
+                    product: products,
+                    name: tmp[idx].name,
+                    curModel
                 })
                 .then(res => {
                     setReasons({...reasons, [tmp[idx].name]: res.data });
@@ -236,7 +253,10 @@ const Home = (props: any) => {
                             <div className="mb-2">
 
                                 <p>Product Details</p>
-                                <TextField
+                                <div style={{height: "55vh", overflowX: "auto"}}>
+                                    <StickyHeadTable selectedproducts={products} setSelectedproducts={setProducts} />
+                                </div>
+                                {/* <TextField
                                     id="outlined-multiline-flexible"
                                     fullWidth
                                     multiline
@@ -244,14 +264,14 @@ const Home = (props: any) => {
                                     className='h-full'
                                     value={productdetails}
                                     onChange={e => setProductdetails(e.target.value)}
-                                />
+                                /> */}
                             </div>
                             <div className='flex flex-col'>
                                 <p>Model</p>
                                 <div className='flex gap-x-2 w-full'>
                                     <Select value={curModel} fullWidth onChange={(e) => setCurModel(e.target.value)}>
                                         {
-                                            models.map((model: any) => <MenuItem key={model.name} value={model.name}>{model.name}</MenuItem>)
+                                            models.map((model: any) => <MenuItem key={model.User} value={model.user}>{model.user}</MenuItem>)
                                         }
                                     </Select>
                                     <Button size='medium' variant="contained" onClick={() => navigate("/model")}>Customize</Button>
