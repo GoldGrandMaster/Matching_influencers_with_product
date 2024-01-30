@@ -2,7 +2,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 import axios from "axios";
 import { useState } from "react";
 
-const AddInfluencerModal = ({
+const AddModelModal = ({
     open,
     onClose,
     initData,
@@ -14,9 +14,11 @@ const AddInfluencerModal = ({
     mode: string
 }) => {
 
+    const [data, setData] = useState<any>({});
+
     const handleDelete = () => {
         new Promise((resolve: any, reject: any) => {
-            axios.delete("http://localhost:5000/delete_data_models", {
+            axios.delete("http://170.130.55.228:5000/delete_data_models", {
                 data: {_id: initData["_id"]["$oid"]},
         })
             .then((res) => {
@@ -28,9 +30,23 @@ const AddInfluencerModal = ({
     }
 
     const updateFormData = (field: String, value: String) => {
-        let newData = {...formData};
+        let newData = {...data};
         newData[field] = value;
-        setFormData(newData);
+        setData(newData);
+    }
+
+    const handleUpdate = () => {
+        let formdata = {...initData, ...data};
+        formdata._id = undefined;
+        console.log(formdata);
+        new Promise((resolve: any, reject: any) => {
+            axios.post(`http://170.130.55.228:5000/update_data_models`, {data:formdata, _id:initData["_id"]["$oid"]})
+            .then(res => {
+                console.log(res.data);
+                resolve();
+            })
+            .catch(err => {reject()})
+        })
     }
 
     return <Dialog
@@ -44,7 +60,7 @@ const AddInfluencerModal = ({
                 const formJson = Object.fromEntries((formData as any).entries());
 
                 new Promise((resolve: any, reject: any) => {
-                    axios.post("http://localhost:5000/add_data_models", formJson)
+                    axios.post("http://170.130.55.228:5000/add_data_models", formJson)
                     .then((res) => {
                         console.log(res.data);
                         resolve();
@@ -63,38 +79,65 @@ const AddInfluencerModal = ({
             <TextField
                 autoFocus
                 margin="dense"
-                label="Name"
+                label="User"
                 type="text"
-                name="name"
-                onChange={(e) => updateFormData("name", e.target.value)}
-                defaultValue={initData.name}
+                name="user"
+                defaultValue={initData.user}
+                onChange={(e) => updateFormData("user", e.target.value)}
                 fullWidth
             />
             <TextField
                 autoFocus
                 margin="dense"
-                label="Prompt1"
-                name="prompt1"
-                defaultValue={initData.userid}
-                onChange={(e) => updateFormData("prompt1", e.target.value)}
+                label="Influencer_Hashtag_Gen"
+                name="influencer_hashtag_gen"
+                defaultValue={initData.influencer_hashtag_gen}
+                onChange={(e) => updateFormData("influencer_hashtag_gen", e.target.value)}
                 type="text"
                 fullWidth
             />
             <TextField
                 margin="dense"
-                label="Prompt2"
-                name="prompt2"
-                defaultValue={initData.platform}
-                onChange={(e) => updateFormData("prompt2", e.target.value)}
+                label="Buyer_Persona_Gen"
+                name="buyer_persona_gen"
+                defaultValue={initData.buyer_persona_gen}
+                onChange={(e) => updateFormData("buyer_persona_gen", e.target.value)}
                 type="text"
                 fullWidth
             />
             <TextField
                 margin="dense"
-                label="Prompt3"
-                name="prompt3"
-                defaultValue={initData.country}
-                onChange={(e) => updateFormData("prompt3", e.target.value)}
+                label="Persona_Hashtag_Gen"
+                name="persona_hashtag_gen"
+                defaultValue={initData.persona_hashtag_gen}
+                onChange={(e) => updateFormData("persona_hashtag_gen", e.target.value)}
+                type="text"
+                fullWidth
+            />
+            <TextField
+                margin="dense"
+                label="Reason_Gen"
+                name="reason_gen"
+                defaultValue={initData.reason_gen}
+                onChange={(e) => updateFormData("reason_gen", e.target.value)}
+                type="text"
+                fullWidth
+            />
+            <TextField
+                margin="dense"
+                label="Email_Write"
+                name="email_write"
+                defaultValue={initData.email_write}
+                onChange={(e) => updateFormData("email_write", e.target.value)}
+                type="text"
+                fullWidth
+            />
+            <TextField
+                margin="dense"
+                label="Email_Rewrite"
+                name="email_rewrite"
+                defaultValue={initData.email_rewrite}
+                onChange={(e) => updateFormData("email_rewrite", e.target.value)}
                 type="text"
                 fullWidth
             />
@@ -104,8 +147,8 @@ const AddInfluencerModal = ({
                 name="description"
                 multiline={true}
                 rows={2}
-                defaultValue={initData.hashtag}
-                onChange={(e) => updateFormData("Description", e.target.value)}
+                defaultValue={initData.description}
+                onChange={(e) => updateFormData("description", e.target.value)}
                 type="text"
                 fullWidth
             />
@@ -113,9 +156,9 @@ const AddInfluencerModal = ({
         <DialogActions>
             <Button onClick={onClose}>Cancel</Button>
             { mode === "update" && <Button color="secondary" onClick={handleDelete}>Delete</Button>}
-            <Button type="submit">{mode === "add" ? "Add" : "Update"}</Button>
+            <Button onClick={mode === "add" ? undefined : handleUpdate} type={mode === "add" ? "submit" : "button"}>{mode === "add" ? "Add" : "Update"}</Button>
         </DialogActions>
     </Dialog>
 }
 
-export default AddInfluencerModal;
+export default AddModelModal;

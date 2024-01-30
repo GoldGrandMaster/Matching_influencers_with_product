@@ -1,9 +1,9 @@
 import { cloneDeep } from 'lodash';
 import { Link } from 'react-router-dom';
 
-import { HOME_PATH, INFLUENCER_PATH, MODEL_PATH } from './path';
+import { HOME_PATH, PRODUCT_PATH, INFLUENCER_PATH, MODEL_PATH } from './path';
 import { TypeNavs, TypeRoutes } from './type-navs';
-import { Home, Influencer, Model } from '@/pages';
+import { Home, Product, Influencer, Model } from '@/pages';
 import { capitalizeFirstLetter } from '@/utils';
 
 const navs: TypeNavs[] = [
@@ -11,6 +11,11 @@ const navs: TypeNavs[] = [
     key: HOME_PATH,
     label: 'home',
     element: <Home />,
+  },
+  {
+    key: PRODUCT_PATH,
+    label: 'product',
+    element: <Product />,
   },
   {
     key: INFLUENCER_PATH,

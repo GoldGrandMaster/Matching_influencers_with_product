@@ -11,8 +11,9 @@ import Button from '@mui/material/Button';
 import { styled, alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
-import AddModelModal from './AddModal';
+import AddProductModal from './AddModal';
 import axios from 'axios';
+
 const backend_url = "http://170.130.55.228:5000";
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -55,7 +56,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 interface Column {
-  id: 'no' | 'user' | 'influencer_hashtag_gen' | 'buyer_persona_gen' | 'persona_hashtag_gen' | 'reason_gen' | 'email_write' | 'email_rewrite' | 'description';
+  id: 'no' | 'asin' | 'title' | 'link' | 'detail';
   label: string;
   minWidth?: number;
   align?: 'right';
@@ -71,72 +72,37 @@ const columns: readonly Column[] = [
     format: (value: number) => value.toLocaleString('en-US'),
   },
   {
-    id: 'user',
-    label: 'User',
+    id: 'asin',
+    label: 'Asin',
     minWidth: 70,
     align: 'center',
   },
   {
-    // influencer profile -> 20 hashtags
-    id: 'influencer_hashtag_gen',
-    label: 'Influencer_Hashtag_Gen',
+    id: 'title',
+    label: 'Title',
     minWidth: 70,
     align: 'center',
   },
   {
-    // product detail -> 5 buyer persona
-    id: 'buyer_persona_gen',
-    label: 'Buyer_Persona_Gen',
-    minWidth: 70,
-    align: 'center',
-    format: (value: number) => value.toLocaleString('en-US'),
-  },
-  {
-    // each buyer persona -> 5 hashtags
-    id: 'persona_hashtag_gen',
-    label: 'Persona_Hashtag_Gen',
+    id: 'link',
+    label: 'Link',
     minWidth: 70,
     align: 'center',
   },
   {
-    // generate reasons of matching
-    id: 'reason_gen',
-    label: 'Reason_Gen',
-    minWidth: 70,
-    align: 'center',
-  },
-  {
-    // write eamil using AI assistant
-    id: 'email_write',
-    label: 'Email_Write',
-    minWidth: 70,
-    align: 'center',
-  },
-  {
-    // rewrite email
-    id: 'email_rewrite',
-    label: 'Email_Rewrite',
-    minWidth: 70,
-    align: 'center',
-  },
-  {
-    // description of model : advantages and disadvantages of model
-    id: 'description',
-    label: 'Description',
+    id: 'detail',
+    label: 'Detail',
     minWidth: 70,
     align: 'center',
   }
 ];
 
 interface Data {
-  user: string;
-  influencer_hashtag_gen: string;
-  buyer_persona_gen: string;
-  persona_hashtag_gen: string;
-  reason_gen: string;
-  email_write: string;
-  email_rewrite: string;
-  description: string;
+  no: number;
+  asin: string;
+  title: string;
+  link: string;
+  detail: string;
 }
 export default function StickyHeadTable() {
   const [page, setPage] = React.useState(0);
@@ -163,9 +129,9 @@ export default function StickyHeadTable() {
     setOpen(true);
   }
 
-  const getInfluencerData = () => {
+  const getProductData = () => {
     new Promise((resolve, reject) => {
-      axios.get(`${backend_url}/get_data_models`)
+      axios.get(`${backend_url}/get_data_products`)
         .then(res => {
           let idx:number = 1;
           for(let row of res.data) {
@@ -179,7 +145,7 @@ export default function StickyHeadTable() {
   }
 
   React.useEffect(() => {
-    getInfluencerData();
+    getProductData();
   }, [])
 
   return (
@@ -217,7 +183,7 @@ export default function StickyHeadTable() {
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row) => {
                   return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={row.userid} onClick={() => handleRowClick(row["_id"]["$oid"])}>
+                    <TableRow hover role="checkbox" tabIndex={-1} key={row.asin} onClick={() => handleRowClick(row["_id"]["$oid"])}>
                       {columns.map((column: Column, idx: number) => {
                         let value: string = row[column.id];
                         return (
@@ -244,7 +210,7 @@ export default function StickyHeadTable() {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
-      <AddModelModal open={open} onClose={() => setOpen(false)} initData={dialInitData} mode={dialMode} />
+      <AddProductModal open={open} onClose={() => setOpen(false)} initData={dialInitData} mode={dialMode} />
     </>
   );
 }

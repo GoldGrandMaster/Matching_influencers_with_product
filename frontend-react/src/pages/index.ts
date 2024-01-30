@@ -1,7 +1,8 @@
 import { lazy } from 'react';
 
 const Home = lazy(() => import('./home'))
+const Product = lazy(() => import('./product'))
 const Influencer = lazy(() => import('./influencer'))
 const Model = lazy(() => import('./model'))
 
-export {Home, Influencer, Model};
+export {Home, Product, Influencer, Model};

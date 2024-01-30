@@ -85,7 +85,8 @@ const SendEmailModal = ({
             />
         </DialogContent>
         <DialogActions>
-            <Button onClick={handleAssist}>AI assistant</Button>
+            <Button onClick={handleAssist}>AI write</Button>
+            <Button>AI rewrite</Button>
             <Button onClick={onClose}>Cancel</Button>
             <Button type="submit">Send</Button>
 
