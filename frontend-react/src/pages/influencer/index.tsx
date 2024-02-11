@@ -228,7 +228,17 @@ export default function StickyHeadTable() {
         })
     })
   }
-
+  const getInfluencerDataFromAPI = () => {
+    new Promise((resolve, reject) => {
+      const clientId = 'a7BYBTySB4h4CVTRP_JZQ';
+      const clientSecret = 'vd5zejJegOPqtWidcWgGAo4GGTc5WAmrNzgiCBF1qQIhnJZrcJNoAyHuBFVVDUS5DYQAo8mJH2BHmjDKN2ielrCN12GUx82HCAcVa3ulBbbuuxUZs9p8_Cl9OlwxAv7k';
+      axios.get(`https://terra.chinamade.com/auth/oauth2/client_token?grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}`,{
+      })
+      .then(res => {
+          console.log(res);
+        })
+    })
+  }
   React.useEffect(() => {
     getInfluencerData();
   }, [])
@@ -237,7 +247,7 @@ export default function StickyHeadTable() {
     <>
       <Paper sx={{ flexGrow: 1, overflowY: 'auto' }}>
         <div className='flex justify-end bg-transparent gap-x-4'>
-          <Button variant="contained" color='primary'>Import CSV</Button>
+          <Button variant="contained" color='primary' onClick={getInfluencerDataFromAPI}>Request</Button>
           <Button variant="contained" color='primary' onClick={() => { setOpen(true); setDialMode("add"); setDialogInitData({})}}>Add</Button>
           <Button variant="contained" color='primary' onClick={handleGenHashtags}>Gen hashtags</Button>
           {/* <Button variant="contained" color='primary'>Search</Button> */}

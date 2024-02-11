@@ -146,9 +146,16 @@ def reason_generating(prompt, product_detail, influencer_detail):
 
 def email_generating(prompt, product_detail, influencer_detail):
     print("generating email by AI assistant...")
-    # prompt = "Please generate an introductory short email for a collaboration opportunity with an influencer.\n**Influencer's Name:** {influencer_name}\n**Writer Information:**\n- **Writer Name:** {writer_name}\n- **Writer Company Name:** {writer_company_name}\n- **Writer Company Introduction:** \n{writer_company_introduction}\n**Product Information:**\n{product}\n**Email Purpose:**\nWe are reaching out to  {influencer_name} to explore a collaboration opportunity. We aim to have {influencer_name} feature our latest product in their video content. The email should be persuasive but natural, avoiding spam triggers. Please ensure the product link is included in the content for the influencer to access more details easily.\n**Email Structure:**\n1. Brief introduction of {writer_name} and {writer_company_name}, be short and concise, use between 45 and 58 words in this item.\n2. Introduction of the latest product, highlighting key features using a list, be short concise, use between 45 and 58 words in this item..\n3. A suggestion for collaboration and incorporating the product into the influencer's content.\n4. Offering to send a sample for hands-on experience.\n5. Expressing gratitude and anticipation for potential collaboration.\n6. Closing with an invitation to reply for more details or with shipping information.\n**Note:** Keep the email concise, use between 234 and 289 words in total.\n\nWe hope to establish cooperation with this influencer and let him recommend our products in the video. Please rewrite this email in English based on understanding our purpose. Please make minor changes to the part of the email related to product introduction, if there are links or pictures in the email. Please keep this link or image. Please note that: Minimize the possibility of being judged as spam, such as avoiding aggressive marketing language, all caps,excessive punctuation,or spammy subject lines."
+
     content = []
     content = 'Product detail: \n' + product_detail + 'Influencer detail: \n' + influencer_detail
+    generated_email = generate_openai(prompt, content) 
+    return generated_email
+
+def email_regenerating(prompt, product_detail, influencer_detail, previous_data):
+    print("generating email by AI assistant...")
+    content = []
+    content = 'Product detail: \n' + product_detail + 'Influencer detail: \n' + influencer_detail + 'Below is first email\n' + previous_data
     generated_email = generate_openai(prompt, content)  
     return generated_email
 
