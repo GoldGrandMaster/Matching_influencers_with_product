@@ -342,6 +342,7 @@ def email_generating():
     influencer_name = data['name']
     product_detail = ''
     products = data['products']
+    extraData = data['data']
     for ele in products:
         product_data = product_collection.find_one({"asin": ele})
         product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
@@ -349,40 +350,53 @@ def email_generating():
     model_user = data['curModel']
     model_data = model_collection.find_one({"user": model_user})
     prompt = model_data['email_write']
-    
+    prompt = prompt.replace("{writer_name}",extraData["senderName"])
+    prompt = prompt.replace("{writer_company_name}",extraData["companyName"])
+    prompt = prompt.replace("{writer_company_introduction}",extraData["companyIntro"])
     influencer_data = influencer_collection.find_one({"name": influencer_name})
     email = utils.email_generating(
         prompt,
         product_detail,
         str(influencer_data))
-    
+    print(email)
     subject, content = utils.email_split(email)
-    print(subject)
-    print(content)
+    # print(subject)
+    # print(content)
     return jsonify({
         'subject': subject,
         'content': content
     })
 
-# @app.route('/regenerate_email', methods=['POST']) 
-# def email_regenerating(): 
-#     data = request.get_json()
+@app.route('/regenerate_email', methods=['POST']) 
+def email_regenerating(): 
+    data = request.get_json()
+    influencer_name = data['name']
+    product_detail = ''
+    products = data['products']
+    prevData = data['prevData']
+    for ele in products:
+        product_data = product_collection.find_one({"asin": ele})
+        product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
+
+    prevDataDetail = 'Subject: ' + prevData["subject"] + '\n' + prevData["message"]
+    model_user = data['curModel']
+    model_data = model_collection.find_one({"user": model_user})
+    prompt = model_data['email_rewrite']
     
-#     cur_content = data['email_content']
-#     model_user = data['curModel']
-#     model_data = model_collection.find_one({"user": model_user})
-#     prompt = model_data['email_rewrite']
-    
-#     new_email = utils.email_regenerating(
-#         prompt, cur_content)
-    
-#     subject, content = utils.email_split(mail)
-#     print(subject)
-#     print(content)
-#     return jsonify({
-#         'subject': subject,
-#         'content': content
-#     })
+    influencer_data = influencer_collection.find_one({"name": influencer_name})
+    email = utils.email_regenerating(
+        prompt,
+        product_detail,
+        str(influencer_data),
+        prevDataDetail)
+    print(email)
+    subject, content = utils.email_split(email)
+    # print(subject)
+    # print(content)
+    return jsonify({
+        'subject': subject,
+        'content': content
+    })
 
 @app.route('/generate_reason', methods=['POST'])
 def reason_generating():

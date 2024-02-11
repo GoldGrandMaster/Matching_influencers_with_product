@@ -32,69 +32,6 @@ const Grid = styled(MuiGrid)(({ theme }) => ({
     height: '100%',
 }))
 
-// const initialRanks = [
-//     {
-//         no: 1,
-//         name: 'agron kercishta',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 2,
-//         name: 'oleksii krupiak',
-//         reason: 'He is best matching person. He is most matching in this field',
-//         isOpened: false
-//     },
-//     {
-//         no: 3,
-//         name: 'william holloway',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 4,
-//         name: 'antonio cello',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 5,
-//         name: 'richard scott',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 1,
-//         name: 'agron kercishta',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 2,
-//         name: 'oleksii krupiak',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 3,
-//         name: 'william holloway',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 4,
-//         name: 'antonio cello',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-//     {
-//         no: 5,
-//         name: 'richard scott',
-//         reason: 'He is best matching person.',
-//         isOpened: false
-//     },
-// ]
-
 const Home = (props: any) => {
     const [message, setMessage] = React.useState('');
     const [ranks, setRanks] = React.useState<any[]>([]);//initialRanks.slice(0, 5));
@@ -178,12 +115,13 @@ const Home = (props: any) => {
         })
     }
 
-    const generateEmail = () => {
+    const generateEmail = (data: any) => {
         return new Promise((resolve, reject) => {
             axios.post(`${backend_url}/generate_email`, {
                 name: curName,
                 products,
-                curModel
+                curModel,
+                data
             })
                 .then(res => {
                     // console.log(res.data);
@@ -192,18 +130,20 @@ const Home = (props: any) => {
         })
     }
 
-    // const regenerateEmail = () => {
-    //     return new Promise((resolve, reject) => {
-    //         axios.post(`${backend_url}/regenerate_email`, {
-    //             email_content,
-    //             curModel
-    //         })
-    //             .then(res => {
-    //                 // console.log(res.data);
-    //                 resolve(res.data)
-    //             }).catch(err => reject(err))
-    //     })
-    // }
+    const regenerateEmail = (data: any) => {
+        return new Promise((resolve, reject) => {
+            axios.post(`${backend_url}/regenerate_email`, {
+                name: curName,
+                products,
+                curModel,
+                prevData: data
+            })
+                .then(res => {
+                    // console.log(res.data);
+                    resolve(res.data)
+                }).catch(err => reject(err))
+        })
+    }
 
     const handleToggleReason = (idx: number) => {
         let tmp = [...ranks];
@@ -339,7 +279,7 @@ const Home = (props: any) => {
                 </Grid>
             </Paper>
             <AddInfluencerModal open={open} onClose={() => setOpen(false)} initData={dialInitData} mode={"read"} />
-            <SendEmailModal open={emailOpen} onClose={() => setEmailOpen(false)} generateEmail={generateEmail} />
+            <SendEmailModal open={emailOpen} onClose={() => setEmailOpen(false)} generateEmail={generateEmail} regenerateEmail={regenerateEmail}/>
         </>
     );
 }

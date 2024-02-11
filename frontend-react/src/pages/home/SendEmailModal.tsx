@@ -7,24 +7,35 @@ import { useState } from "react";
 const SendEmailModal = ({
     open,
     onClose,
-    generateEmail
+    generateEmail,
+    regenerateEmail
 }: {
     open: boolean,
     onClose: any,
-    generateEmail: any
+    generateEmail: any,
+    regenerateEmail: any
 }) => {
 
     const [subject, setSubject] = React.useState("")
     const [message, setMessage] = React.useState("")
+    const [senderName, setSenderName] = React.useState("");
+    const [companyName, setCompanyName] = React.useState("");
+    const [companyIntro, setCompanyIntro] = React.useState("");
 
     const handleAssist = () => {
-        generateEmail().then((data: any) => {
+        generateEmail({senderName, companyName, companyIntro}).then((data: any) => {
             console.log(data);
             setSubject(data.subject);
             setMessage(data.content);
         });
     }
-
+    const handleRewrite = () => {
+        regenerateEmail({subject, message}).then((data: any) => {
+            console.log(data);
+            setSubject(data.subject);
+            setMessage(data.content);
+        });
+    }
     return <Dialog
         open={open}
         onClose={onClose}
@@ -65,6 +76,36 @@ const SendEmailModal = ({
             <TextField
                 autoFocus
                 margin="dense"
+                placeholder="Sender Name"
+                name="sender_name"
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                type="text"
+                fullWidth
+            />
+            <TextField
+                autoFocus
+                margin="dense"
+                placeholder="Company Name"
+                name="company_name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                type="text"
+                fullWidth
+            />
+            <TextField
+                autoFocus
+                margin="dense"
+                placeholder="Company Introduction"
+                name="company_introduction"
+                value={companyIntro}
+                onChange={(e) => setCompanyIntro(e.target.value)}
+                type="text"
+                fullWidth
+            />
+            <TextField
+                autoFocus
+                margin="dense"
                 placeholder="Subject"
                 name="subject"
                 value={subject}
@@ -86,7 +127,7 @@ const SendEmailModal = ({
         </DialogContent>
         <DialogActions>
             <Button onClick={handleAssist}>AI write</Button>
-            <Button>AI rewrite</Button>
+            <Button onClick={handleRewrite}>AI rewrite</Button>
             <Button onClick={onClose}>Cancel</Button>
             <Button type="submit">Send</Button>
 
