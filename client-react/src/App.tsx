@@ -28,7 +28,7 @@ const router = createBrowserRouter(
       element: <CreateEmailGroup />
     },
     {
-      path: "/matched-influencers",
+      path: "/matched-influencers/:jobID",
       element: <MatchedInfluencers />
     },
     {

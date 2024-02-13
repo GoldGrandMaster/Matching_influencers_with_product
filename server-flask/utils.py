@@ -69,8 +69,8 @@ def parse_follower_count(follower):
 # nlp = spacy.load("en_core_web_md")
 
 def ranking(product_hashtags, influencer_hashtags, influencer_followers, influencer_names):
-
     product_embedded_vec = embedded_vec(product_hashtags)
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
     influencer_embedded_data = []
 
     num_influencers = len(influencer_names)
@@ -94,11 +94,11 @@ def ranking(product_hashtags, influencer_hashtags, influencer_followers, influen
         similarity_values.append(cosine_similarity_value)
 
     score_influencer_followers = []
-    max_followers_numeric = parse_follower_count(max(influencer_followers, key=parse_follower_count))
+    max_followers_numeric = max(influencer_followers)
 
     for follower in influencer_followers:
-        numeric_follower = parse_follower_count(follower)
-        score_influencer_followers.append(numeric_follower / max_followers_numeric)
+        # numeric_follower = parse_follower_count(follower)
+        score_influencer_followers.append(follower / max_followers_numeric)
 
     weight1 = 0.7
     weight2 = 0.3

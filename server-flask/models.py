@@ -1,5 +1,5 @@
-from mongoengine import Document
-from mongoengine import DateTimeField, StringField, ReferenceField, ListField, IntField
+from mongoengine import Document, EmbeddedDocument,EmbeddedDocumentField, CASCADE
+from mongoengine import DateTimeField, StringField, ReferenceField, ListField, IntField, BooleanField
 
 class Influencers(Document):
     name = StringField(max_length=60, required=True, unique=True)
@@ -18,16 +18,6 @@ class Influencers(Document):
     profile_last_10video = StringField()
     total_hashtag = ListField()
 
-class Models(Document):
-    user = StringField(max_length=60, required=True, unique=True)
-    influencer_hashtag_gen = StringField()
-    buyer_persona_gen = StringField()
-    persona_hashtag_gen = StringField()
-    reason_gen = StringField()
-    email_write = StringField()
-    email_rewrite = StringField()
-    description = StringField()
-
 class Products(Document):
     sku = StringField(max_length=20)
     country = StringField()
@@ -38,3 +28,17 @@ class Products(Document):
     sample = StringField()
     detail = StringField()
 
+class ReasonInfluencer(Document):
+    influencer = ReferenceField(Influencers, reverse_delete_rule=CASCADE)
+    reason = StringField()
+
+class InfluencerMatchings(Document):
+    products = ListField(StringField())
+    platform = StringField()
+    limitMailbox = BooleanField()
+    nation = StringField()
+    minFollowerCount = IntField()
+    maxFollowerCount = IntField()
+    callbackUrl = StringField()
+    matchedCount = IntField()
+    influencerList = ListField(ReferenceField(ReasonInfluencer, reverse_delete_rule=CASCADE))

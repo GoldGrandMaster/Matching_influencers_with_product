@@ -3,8 +3,9 @@ import React from 'react';
 import Header from '../../components/Header';
 import axios from 'axios'
 import ProductsTable from './ProductsTable';
+import { useNavigate } from 'react-router-dom'
 
-const backend_url = "http://192.168.128.36:5000";
+const backend_url = "http://170.130.55.228:5000";
 const mails = [
 	'asdf@mail.com',
 	'23fer@gmail.com'
@@ -39,6 +40,7 @@ const CreateEmailGroup = () => {
 	const [addProductModal, setAddProductModal] = React.useState(false)
 	const [countries, setCountries] = React.useState(['All']);
 
+	const navigate = useNavigate()
 	React.useEffect(() => {
 		axios.get(`${backend_url}/get_country`)
 			.then(res => {
@@ -80,7 +82,10 @@ const CreateEmailGroup = () => {
 		new Promise((resolve, reject) => {
 			axios.post(`${backend_url}/run`, { products: selectedrows.map(row => row['asin']), filterFields })
 				.then(res => {
-					console.log(res.data)
+					if(res.data.notfound)
+						navigate('/matched-influencers/nomatched')
+					if (res.data.jobID)
+						navigate(`/matched-influencers/${res.data.jobID}`)
 				})
 		})
 	}
@@ -285,7 +290,7 @@ const CreateEmailGroup = () => {
 			</DialogTitle>
 			<DialogContent className='container mx-auto'>
 				<LinearProgress />
-				20% completed
+				Processing...
 				<div className='text-center text-[20px]'>
 					The match may take a long time, so you can log out and check back later
 				</div>

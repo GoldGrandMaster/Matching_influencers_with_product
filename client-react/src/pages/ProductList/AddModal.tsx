@@ -1,7 +1,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
-const backend_url = "http://192.168.128.36:5000";
+const backend_url = "http://170.130.55.228:5000";
 
 const AddProductModal = ({
     open,

@@ -14,7 +14,7 @@ import InputBase from '@mui/material/InputBase';
 import AddProductModal from './AddModal';
 import axios from 'axios';
 
-const backend_url = "http://192.168.128.36:5000";
+const backend_url = "http://170.130.55.228:5000";
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
     borderRadius: theme.shape.borderRadius,
