@@ -133,9 +133,12 @@ def delete_data_influencers():
 def run():
     data = request.get_json()
     print(data)
+
     product_detail = ''
     products = data['products']
+    # product_asin_list = []
     for ele in products:
+        # product_asin_list.append(str(ele))
         product_data = product_collection.find_one({"asin": ele})
         product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
     print(product_detail)
@@ -154,12 +157,21 @@ def run():
     product_hashtags = [word[1:] for word in product_hashtags]
     print(product_hashtags)
 
-    # Fetch influencer hashtags and followers
+    filterfield = data['filterFields']
+    print(filterfield)
+    platform_filter = filterfield['platform']
+    email_filter = filterfield['email']
+    country_filter = filterfield['country']
+    follower_filter = filterfield['followers']
+    # Fetch influencer datas
     influencer_data = list(influencer_collection.find({}, {
         "total_hashtag": 1,
         "follower": 1,
         "name": 1,
         "profile": 1,
+        "platform": 1,
+        "email": 1,
+        "country": 1,
         "_id": 0
     }))
     
@@ -169,10 +181,38 @@ def run():
     influencer_names = []
     influencer_profiles = []
     for influencer in influencer_data:
+        platform = influencer.get('platform', "").lower()
+        if platform_filter != 'nolimit':
+            if platform_filter != platform:
+                continue
+
+        email = influencer.get('email', "")
+        if email_filter != 'nolimit':
+            if not email:
+                continue
+
+        country = influencer.get('country', "")
+        if country_filter != 'All':
+            if country_filter != country:
+                continue
+
+        follower = utils.parse_follower_count(influencer.get('follower', ""))
+        if follower_filter == 1:
+            if follower > 100:
+                continue
+        elif follower_filter == 2:
+            if follower <= 100 or follower > 500:
+                continue
+        elif follower_filter == 3:
+            if follower <= 500 or follower > 1000:
+                continue
+        elif follower_filter == 4:
+            if follower <= 1000:
+                continue
+
         hashtags = influencer.get('total_hashtag', [])
         influencer_hashtags.extend(hashtags)
 
-        follower = influencer.get('follower', "")
         if follower:
             influencer_followers.append(follower)
 
@@ -180,15 +220,88 @@ def run():
         if name:
             influencer_names.append(name)
 
-        profile = influencer.get('profile', "")
-        if profile:
-            influencer_profiles.append(profile)
+        # profile = influencer.get('profile', "")
+        # if profile:
+        #     influencer_profiles.append(profile)
+
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(len(influencer_names))
+    if len(influencer_names) == 0:
+        print('No suitable influencer was found, please try again.')
+        return jsonify({"notfound": True})
 
     rankinglist_influencer = utils.ranking(product_hashtags, influencer_hashtags, influencer_followers, influencer_names)
-    return [{
-        'name': rank
-    } for rank in rankinglist_influencer]
-    return 'success run!!'
+
+    prompt_ReasonGen = 'These are product detail and one influencer detail of my influencer pool. This influencer is detected as top matched with my product. Give me the summarized reason. I only need the reason.'
+    reasonlist_influencer = []
+
+    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    for name in rankinglist_influencer:
+        influencer_data = models.Influencers.objects(name=name).first()
+
+        reason = utils.reason_generating(
+            prompt_ReasonGen,
+            product_detail,
+            str(influencer_data))
+        
+        Reason_Influencer = models.ReasonInfluencer(
+            influencer = influencer_data,
+            reason = reason
+        )
+        Reason_Influencer.save()
+        reasonlist_influencer.append(Reason_Influencer)
+
+    job = models.InfluencerMatchings(
+        products = products,
+        platform = 'platform',
+        limitMailbox = True,
+        nation = 'nation',
+        minFollowerCount = 0,
+        maxFollowerCount = 0,
+        callbackUrl = 'callbackUrl',
+        matchedCount = min(2000, len(influencer_names)),  # Initialize with 0 or any default value
+        influencerList = reasonlist_influencer
+    )
+
+    job.save()
+    return jsonify({"jobID": str(job.id)})
+
+@app.route('/get_influencer_matching_result', methods=['POST'])
+def get_influencer_matching_result():
+    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    data = request.get_json()
+    model = models.InfluencerMatchings.objects(id=data['jobID']).first()
+    # print(model.influencerList[0].influencer.name)
+    product_data = []
+    influencer_data = []
+
+    for product in model.products:
+        print(product)
+        temp = models.Products.objects(asin=product).first()
+        product_data.append({
+            "title": temp.title,
+            "SKU": temp.sku,
+            "link": temp.link
+        })
+    # print(product_data)
+
+
+    for reason_influencer_id in model.influencerList:
+        influencer_data.append({
+            "influencer": reason_influencer_id.influencer.name,
+            "followers": reason_influencer_id.influencer.follower,
+            "country": reason_influencer_id.influencer.country,
+            "email": reason_influencer_id.influencer.email,
+            "reason": reason_influencer_id.reason
+        })
+    # print(influencer_data)
+    # print(influencer_data[0])
+    
+    return jsonify({
+        "product_data": product_data,
+        "influencer_data": influencer_data
+    })
+    return 'success'
 
 @socketio.on('connect')
 def on_connect():
