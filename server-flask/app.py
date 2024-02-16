@@ -117,7 +117,6 @@ def get_data_influencers():
 def get_country():
     countries = influencer_collection.distinct("country")
     return jsonify(countries)
-    
 
 @app.route('/delete_data_influencers', methods=['DELETE'])
 def delete_data_influencers():
@@ -302,6 +301,42 @@ def get_influencer_matching_result():
         "influencer_data": influencer_data
     })
     return 'success'
+
+@app.route('/ai_write_email', methods=['POST']) 
+def email_generating(): 
+    # data = request.get_json()
+    # jobID = data['jobID']
+    # senderName = data['senderName']
+    # companyName = data['comopanyName']
+    # companyIntro = data['companyIntro']
+    # print(jobID)
+    # product_detail = ''
+    # products = data['products']
+    # extraData = data['data']
+    # for ele in products:
+    #     product_data = product_collection.find_one({"asin": ele})
+    #     product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
+
+    # model_user = data['curModel']
+    # model_data = model_collection.find_one({"user": model_user})
+    # prompt = model_data['email_write']
+    # prompt = prompt.replace("{writer_name}",extraData["senderName"])
+    # prompt = prompt.replace("{writer_company_name}",extraData["companyName"])
+    # prompt = prompt.replace("{writer_company_introduction}",extraData["companyIntro"])
+    # influencer_data = influencer_collection.find_one({"name": influencer_name})
+    # email = utils.email_generating(
+    #     prompt,
+    #     product_detail,
+    #     str(influencer_data))
+    # print(email)
+    # subject, content = utils.email_split(email)
+    # # print(subject)
+    # # print(content)
+    # return jsonify({
+    #     'subject': subject,
+    #     'content': content
+    # })
+    return "AI write successfully"
 
 @socketio.on('connect')
 def on_connect():
