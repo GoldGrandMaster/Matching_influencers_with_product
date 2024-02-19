@@ -1,12 +1,15 @@
 import React from 'react'
 import Header from '../components/Header';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, OutlinedInput, Select } from '@mui/material';
+import {useNavigate, useParams} from 'react-router-dom'
+import axios from 'axios';
 
 const templates = [
     'avsdfs',
     'asdgwef',
     'gwvxdfdsf'
 ]
+const backend_url = "http://170.130.55.228:5000";
 
 const AiWriteEmail = () => {
     const [saveTemplateModal, setSaveTemplateModal] = React.useState(false);
@@ -15,11 +18,26 @@ const AiWriteEmail = () => {
     const [writingProcessModal, setWritingProcessModal] = React.useState(false);
     const [cancelConfirmModal, setCancelConfirmModal] = React.useState(false);
 
+    const [senderName, setSenderName] = React.useState('')
+    const [companyName, setCompanyName] = React.useState('')
+    const [companyIntro, setCompanyIntro] = React.useState('')
+
+    const [influencers, setInfluencers] = React.useState(0);
+    const {jobID} = useParams();
+    const navigate = useNavigate();
+
+    React.useEffect(() => {
+        axios.post(`${backend_url}/get_influencer_matching_result`, { jobID })
+            .then(res => {
+                setInfluencers(res.data.influencer_data.length)
+            })
+    }, [])
+
     return (
         <div>
             <Header title="AI Write Email" step={1} />
             <div className='text-center my-7'>
-                <h4 className='text-[30px] font-bold'>Sending email to 2000 influencers</h4>
+                <h4 className='text-[30px] font-bold'>Sending email to {influencers} influencers</h4>
             </div>
             <div>
                 <div className='border-b-2 border-[#000000] pb-1'>
@@ -35,15 +53,15 @@ const AiWriteEmail = () => {
                     <span className='text-right'>
                         Senders Name:
                     </span>
-                    <OutlinedInput placeholder='Name of the Sender' size='small' margin='dense' />
+                    <OutlinedInput placeholder='Name of the Sender' size='small' margin='dense' value={senderName} onChange={e => setSenderName(e.target.value)} />
                     <span className='text-right'>
                         Company Name:
                     </span>
-                    <OutlinedInput placeholder='The company or brand' size='small' margin='dense' />
+                    <OutlinedInput placeholder='The company or brand' size='small' margin='dense' value={companyName} onChange={e => setCompanyName(e.target.value)} />
                     <span className='text-right'>
                         Company Introduction:
                     </span>
-                    <OutlinedInput multiline placeholder='A brief introduction of the partner' minRows={5} size='small' margin='dense' />
+                    <OutlinedInput multiline placeholder='A brief introduction of the partner' minRows={5} size='small' margin='dense' value={companyIntro} onChange={e => setCompanyIntro(e.target.value)} />
                     <span className='text-right'>
                         Email Request:
                     </span>
@@ -66,7 +84,7 @@ const AiWriteEmail = () => {
                 </div>
                 <div className='flex justify-end mt-5'>
                     <div className='grid grid-cols-3 gap-4 w-[25vw]'>
-                        <Button variant='outlined'>Back</Button>
+                        <Button variant='outlined' onClick={() => navigate(`/matched-influencers/${jobID}`)}>Back</Button>
                         <Button variant='outlined' onClick={() => setPreviewModal(true)}>Write preview</Button>
                         <Button variant='contained' color="primary" onClick={() => setSendingConfirmModal(true)}>Next, AI Write</Button>
                     </div>
@@ -83,13 +101,15 @@ const AiWriteEmail = () => {
                     </Dialog>
                     <Dialog open={sendingConfirmModal}>
                         <DialogContent>
-                            Are you sure you're going to write 2000 emails?
+                            Are you sure you're going to write {influencers} emails?
                         </DialogContent>
                         <DialogActions>
                             <Button variant='outlined' onClick={() => setSendingConfirmModal(false)}>Cancel</Button>
                             <Button variant='contained' color='primary' onClick={() => {
                                 setSendingConfirmModal(false);
                                 setWritingProcessModal(true);
+                                axios.post(`${backend_url}/ai_write_email`, {jobID, senderName, companyName, companyIntro})
+                                .then(res => navigate(`/checking-email/${res.data.jobID}`))
                             }}>Confirm</Button>
                         </DialogActions>
                     </Dialog>
@@ -99,7 +119,7 @@ const AiWriteEmail = () => {
                         </DialogTitle>
                         <DialogContent>
                             <LinearProgress />
-                            20% completed
+                            Processing...
                             <div className='text-center text-[20px]'>
                                 It may take a long time, so you can log out and check back later
                             </div>
