@@ -25,7 +25,7 @@ class Products(Document):
     asin = StringField(max_length=20, required=True, unique=True)
     title = StringField()
     link = StringField()
-    sample = StringField()
+    sample = IntField()
     detail = StringField()
 
 class ReasonInfluencer(Document):
@@ -42,3 +42,20 @@ class InfluencerMatchings(Document):
     callbackUrl = StringField()
     matchedCount = IntField()
     influencerList = ListField(ReferenceField(ReasonInfluencer, reverse_delete_rule=CASCADE))
+
+class Emails(Document):
+    influencerId = ReferenceField(Influencers, reverse_delete_rule=CASCADE)
+    emailContent = StringField()
+    reason = StringField()
+
+class WritingEmails(Document):
+    language = StringField()
+    senderName = StringField()
+    companyName = StringField()
+    companyDesc = StringField()
+    emailRemark = StringField()
+    influencerJobId = ReferenceField(InfluencerMatchings)
+    callbackUrl = StringField()
+    emails = ListField(ReferenceField(Emails, reverse_delete_rule=CASCADE))
+    title = StringField()
+    emailContent = StringField()

@@ -32,15 +32,15 @@ const router = createBrowserRouter(
       element: <MatchedInfluencers />
     },
     {
-      path: "/ai-write-email",
+      path: "/ai-write-email/:jobID",
       element: <AiWriteEmail />
     },
     {
-      path: "/ai-rewrite-email",
+      path: "/ai-rewrite-email/:jobID",
       element: <AiRewriteEmail />
     },
     {
-      path: "/checking-email",
+      path: "/checking-email/:jobID",
       element: <CheckingEmail />
     },
     {

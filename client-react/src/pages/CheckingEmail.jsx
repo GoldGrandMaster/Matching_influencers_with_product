@@ -1,84 +1,28 @@
 import { Button, Dialog, DialogActions, DialogContent, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material'
+import axios from 'axios'
 import React from 'react'
-import { Navigate } from 'react-router-dom'
-
-const products = [
-    {
-        sku: "US20201110",
-        country: "US",
-        channel: "Amazon",
-        asin: "KQIQ2111",
-        detail: "xxxxx",
-        link: "https://www.amazon.com/dp/df2wgfwr",
-        available_sample: 2
-    },
-    {
-        sku: "US20201124",
-        country: "US",
-        channel: "Amazon",
-        asin: "KQIQ2111",
-        detail: "xxxxx",
-        link: "https://www.amazon.com/dp/df2wgfwr",
-        available_sample: 2
-    },
-    {
-        sku: "US20201410",
-        country: "US",
-        channel: "Amazon",
-        asin: "KQIQ2111",
-        detail: "xxxxx",
-        link: "https://www.amazon.com/dp/df2wgfwr",
-        available_sample: 2
-    },
-    {
-        sku: "US20201116",
-        country: "US",
-        channel: "Amazon",
-        asin: "KQIQ2111",
-        detail: "xxxxx",
-        link: "https://www.amazon.com/dp/df2wgfwr",
-        available_sample: 2
-    }
-]
-
-const influencers = [
-    {
-        influencer: 'T-series',
-        follwers: "15214",
-        country: "US",
-        email: "124rfr1@gmail.com",
-        ai_recommendation_reason: "very good",
-        prompt: "--"
-    },
-    {
-        influencer: 'T-series',
-        follwers: "15214",
-        country: "US",
-        email: "124rfr1@gmail.com",
-        ai_recommendation_reason: "very good",
-        prompt: "--"
-    },
-    {
-        influencer: 'T-series',
-        follwers: "15214",
-        country: "US",
-        email: "124rfr1@gmail.com",
-        ai_recommendation_reason: "very good",
-        prompt: "--"
-    },
-    {
-        influencer: 'T-series',
-        follwers: "15214",
-        country: "US",
-        email: "124rfr1@gmail.com",
-        ai_recommendation_reason: "very good",
-        prompt: "--"
-    }
-]
+import { useNavigate, useParams } from 'react-router-dom'
+const backend_url = "http://170.130.55.228:5000";
 
 const CheckingEmail = () => {
 
     const [emailSendConfirmModal, setEmailSendConfirmModal] = React.useState(false);
+    const [influencers, setInfluencers] = React.useState([])
+    const [products, setProducts] = React.useState([])
+    const [checkEmailModal, setCheckEmailModal] = React.useState(false);
+    const [emailContent, setEmailContent] = React.useState({})
+    const [influencerjobID, setInfluencerjobID] = React.useState("")
+    const navigate = useNavigate()
+    const { jobID } = useParams()
+
+    React.useEffect(() => {
+        axios.post(`${backend_url}/get_emails`, { jobID })
+            .then(res => {
+                setProducts(res.data.products);
+                setInfluencers(res.data.influencers);
+                setInfluencerjobID(res.data.influencerjobID);
+            })
+    }, [])
 
     return (
         <div>
@@ -86,7 +30,7 @@ const CheckingEmail = () => {
                 <span className='text-[20px]'>Create AI email group</span>
                 <div className='float-right'>
                     <div className='grid grid-cols-2 gap-3'>
-                        <Button variant='outlined'>Back</Button>
+                        <Button variant='outlined' onClick={() => navigate(`/ai-write-email/${influencerjobID}`)}>Back</Button>
                         <Button variant='contained' onClick={() => setEmailSendConfirmModal(true)}>Send</Button>
                         <Dialog open={emailSendConfirmModal}>
                             <DialogContent>
@@ -129,7 +73,7 @@ const CheckingEmail = () => {
                                     <TableCell align="center">{product.asin}</TableCell>
                                     <TableCell align="center">{product.detail}</TableCell>
                                     <TableCell align="center">{product.link}</TableCell>
-                                    <TableCell align="center">{product.available_sample}</TableCell>
+                                    <TableCell align="center">{product.sample}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -158,21 +102,39 @@ const CheckingEmail = () => {
                                     sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                 >
                                     <TableCell component="th" scope="row" align='center'>
-                                        {influencer.influencer}
+                                        {influencer.name}
                                     </TableCell>
-                                    <TableCell align="center">{influencer.follwers}</TableCell>
+                                    <TableCell align="center">{influencer.follwer}</TableCell>
                                     <TableCell align="center">{influencer.country}</TableCell>
                                     <TableCell align="center">{influencer.email}</TableCell>
-                                    <TableCell align="center">{influencer.ai_recommendation_reason}</TableCell>
+                                    <TableCell align="center">{influencer.reason}</TableCell>
                                     <TableCell align="center">{influencer.prompt}</TableCell>
                                     <TableCell align="center">
-                                        <Button>Check the Email</Button>
+                                        <Button onClick={() => {
+                                            setEmailContent({ ...influencer.emailContent })
+                                            setCheckEmailModal(true)
+                                        }}>Check the Email</Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
+                <Dialog open={checkEmailModal}>
+                    <DialogContent>
+                        <div className='p-5 m-auto'>
+                            <h4 className='mb-3'>
+                                {emailContent.subject}
+                            </h4>
+                            <p>
+                                {emailContent.content}
+                            </p>
+                        </div>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button variant='contained' onClick={() => setCheckEmailModal(false)}>Cancel</Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         </div>
     )

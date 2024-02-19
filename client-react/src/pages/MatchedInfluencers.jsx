@@ -180,8 +180,8 @@ const MatchedInfluencers = () => {
                                 <div className='flex justify-end mt-5'>
                                     <div className='grid grid-cols-3 gap-4 w-[30vw]'>
                                         <Button variant='outlined' onClick={() => setBackConfirmModal(true)}>Back</Button>
-                                        <Button variant='contained' color="primary" onClick={() => navigate('/ai-write-email')}>AI Write email</Button>
-                                        <Button variant='contained' color='primary' onClick={() => navigate('/ai-rewrite-email')}>AI ReWrite email</Button>
+                                        <Button variant='contained' color="primary" onClick={() => navigate(`/ai-write-email/${jobID}`)}>AI Write email</Button>
+                                        <Button variant='contained' color='primary' onClick={() => navigate(`/ai-rewrite-email/${jobID}`)}>AI ReWrite email</Button>
                                     </div>
                                     <Dialog open={backconfirmmodal} maxWidth='xs' fullWidth className='container mx-auto'>
                                         <DialogContent>

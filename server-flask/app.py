@@ -303,40 +303,253 @@ def get_influencer_matching_result():
     return 'success'
 
 @app.route('/ai_write_email', methods=['POST']) 
-def email_generating(): 
-    # data = request.get_json()
-    # jobID = data['jobID']
-    # senderName = data['senderName']
-    # companyName = data['comopanyName']
-    # companyIntro = data['companyIntro']
-    # print(jobID)
-    # product_detail = ''
+def ai_write_email(): 
+    data = request.get_json()
+    jobID = data['jobID']
+    senderName = data['senderName']
+    companyName = data['companyName']
+    companyIntro = data['companyIntro']
+    print(jobID)
+    print(senderName)
+    model = models.InfluencerMatchings.objects(id=data['jobID']).first()
+    # print(model.influencerList[0].influencer.name)
+    product_data = []
+    influencer_data = []
+
+    for product in model.products:
+        print(product)
+        temp = models.Products.objects(asin=product).first()
+        product_data.append({
+            "title": temp.title,
+            "detail": temp.detail,
+            "link": temp.link
+        })
+    print(product_data[0])
+
+
+    for reason_influencer_id in model.influencerList:
+        influencer_data.append({
+            "id": reason_influencer_id.influencer.id,
+            "influencer": reason_influencer_id.influencer.name,
+            "followers": reason_influencer_id.influencer.follower,
+            "country": reason_influencer_id.influencer.country,
+            "email": reason_influencer_id.influencer.email,
+            "reason": reason_influencer_id.reason
+        })
+    # print(influencer_data)
+    print(influencer_data[0])
+    product_detail = ''
     # products = data['products']
     # extraData = data['data']
-    # for ele in products:
-    #     product_data = product_collection.find_one({"asin": ele})
-    #     product_detail = product_detail + 'Title:\n' + product_data['title'] + '\n' + 'Detail:\n' + product_data['detail'] + '\n\n'
+    for ele in product_data:
+        product_detail = product_detail + 'Title:\n' + ele['title'] + '\n' + 'Product Link:\n' + ele['link'] + '\n' + 'Detail:\n' + ele['detail'] + '\n\n'
 
-    # model_user = data['curModel']
-    # model_data = model_collection.find_one({"user": model_user})
-    # prompt = model_data['email_write']
-    # prompt = prompt.replace("{writer_name}",extraData["senderName"])
-    # prompt = prompt.replace("{writer_company_name}",extraData["companyName"])
-    # prompt = prompt.replace("{writer_company_introduction}",extraData["companyIntro"])
-    # influencer_data = influencer_collection.find_one({"name": influencer_name})
-    # email = utils.email_generating(
-    #     prompt,
-    #     product_detail,
-    #     str(influencer_data))
-    # print(email)
+    print(product_detail)
+    prompt = "Please generate an introductory short email for a collaboration opportunity with an influencer. **Influencer's Name:** {influencer_name} **Writer Information:** - **Writer Name:** {writer_name} - **Writer Company Name:** {writer_company_name} - **Writer Company Introduction:** {writer_company_introduction} **Product Information:** {product} **Email Purpose:** We are reaching out to  {influencer_name} to explore a collaboration opportunity. We aim to have {influencer_name} feature our latest product in their video content. The email should be persuasive but natural, avoiding spam triggers. Please ensure the product link is included in the content for the influencer to access more details easily. **Email Structure:** 1. Brief introduction of {writer_name} and {writer_company_name}, be short and concise, use between 45 and 58 words in this item. 2. Introduction of the latest product, highlighting key features using a list, be short concise, use between 45 and 58 words in this item.. 3. A suggestion for collabora"
+    prompt = prompt.replace("{writer_name}", senderName)
+    prompt = prompt.replace("{writer_company_name}", companyName)
+    prompt = prompt.replace("{writer_company_introduction}", companyIntro)
+    email_list = []
+    for ele in influencer_data:
+        content = utils.email_generating(
+            prompt,
+            product_detail,
+            str(ele)
+        )
+        email = models.Emails(
+            influencerId = ele['id'],
+            emailContent = content,
+            reason = ele['reason']
+        )
+        email.save()
+        email_list.append(email.id)
+
+    writing_emails = models.WritingEmails(
+        language = 'English',
+        senderName = senderName,
+        companyName = companyName,
+        companyDesc = companyIntro,
+        emailRemark = 'emailRemark',
+        influencerJobId = jobID,
+        callbackUrl = 'callbackUrl',
+        emails = email_list
+    )
+    writing_emails.save()
     # subject, content = utils.email_split(email)
     # # print(subject)
     # # print(content)
-    # return jsonify({
-    #     'subject': subject,
-    #     'content': content
-    # })
-    return "AI write successfully"
+    return jsonify({
+        'jobID': str(writing_emails.id)
+    })
+    # return "AI write successfully"
+
+@app.route('/get_emails', methods=['POST'])
+def get_emails():
+    data = request.get_json()
+    jobID = data['jobID']
+    writing_email = models.WritingEmails.objects(id=jobID).first()
+
+    products = writing_email.influencerJobId.products
+    product_list = []
+    for ele in products:
+        temp = models.Products.objects(asin=ele).first()
+        product_list.append({
+            "sku": temp.sku,
+            "country": temp.country,
+            "channel": temp.platform,
+            "asin": temp.asin,
+            "detail": temp.detail,
+            "link": temp.link,
+            "sample": temp.sample
+        })
+
+    influencer_list = []
+    for ele in writing_email.emails:
+        # temp = models.Emails.objects(id=ele).first()
+        influencer = ele.influencerId
+        subject, content = utils.email_split(ele.emailContent)
+        influencer_list.append({
+            "name": influencer.name,
+            "follower": influencer.follower,
+            "country": influencer.country,
+            "email": influencer.email,
+            "reason": ele.reason,
+            "prompt": '---',
+            "emailContent": {
+                "subject": subject,
+                "content": content
+            }
+        })
+
+
+    return jsonify({
+        "products": product_list,
+        "influencers": influencer_list,
+        'influencerjobID': str(writing_email.influencerJobId.id)
+    })
+
+@app.route('/ai_rewrite_email', methods=['POST']) 
+def ai_rewrite_email(): 
+    data = request.get_json()
+    jobID = data['jobID']
+    title = data['title']
+    mailContent = data['mailContent']
+    language = data['language']
+    prompt = data['prompt']
+    print(jobID)
+    model = models.InfluencerMatchings.objects(id=data['jobID']).first()
+    # print(model.influencerList[0].influencer.name)
+    product_data = []
+    influencer_data = []
+
+    for product in model.products:
+        print(product)
+        temp = models.Products.objects(asin=product).first()
+        product_data.append({
+            "title": temp.title,
+            "detail": temp.detail,
+            "link": temp.link
+        })
+    print(product_data[0])
+
+
+    for reason_influencer_id in model.influencerList:
+        influencer_data.append({
+            "id": reason_influencer_id.influencer.id,
+            "influencer": reason_influencer_id.influencer.name,
+            "followers": reason_influencer_id.influencer.follower,
+            "country": reason_influencer_id.influencer.country,
+            "email": reason_influencer_id.influencer.email,
+            "reason": reason_influencer_id.reason
+        })
+    # print(influencer_data)
+    print(influencer_data[0])
+    product_detail = ''
+    # products = data['products']
+    # extraData = data['data']
+    for ele in product_data:
+        product_detail = product_detail + 'Title:\n' + ele['title'] + '\n' + 'Product Link:\n' + ele['link'] + '\n' + 'Detail:\n' + ele['detail'] + '\n\n'
+
+    print(product_detail)
+    
+    preEmail = 'Subject:\n' + title + '\n' + 'Content:\n' + mailContent
+    email_list = []
+    for ele in influencer_data:
+        content = utils.email_regenerating(
+            prompt,
+            product_detail,
+            str(ele),
+            preEmail
+        )
+        email = models.Emails(
+            influencerId = ele['id'],
+            emailContent = content,
+            reason = ele['reason']
+        )
+        email.save()
+        email_list.append(email.id)
+
+    writing_emails = models.WritingEmails(
+        title = title,
+        emailContent = mailContent,
+        language = language,
+        emailRemark = 'remark',
+        influencerJobId = jobID,
+        emails = email_list
+    )
+    writing_emails.save()
+    # subject, content = utils.email_split(email)
+    # # print(subject)
+    # # print(content)
+    return jsonify({
+        'jobID': str(writing_emails.id)
+    })
+    # return "AI write successfully"
+
+@app.route('/get_rewrite_emails', methods=['POST'])
+def get_rewrite_emails():
+    data = request.get_json()
+    jobID = data['jobID']
+    rewriting_email = models.ReWritingEmails.objects(id=jobID).first()
+
+    products = rewriting_email.influencerJobId.products
+    product_list = []
+    for ele in products:
+        temp = models.Products.objects(asin=ele).first()
+        product_list.append({
+            "sku": temp.sku,
+            "country": temp.country,
+            "channel": temp.platform,
+            "asin": temp.asin,
+            "detail": temp.detail,
+            "link": temp.link,
+            "sample": temp.sample
+        })
+
+    influencer_list = []
+    for ele in rewriting_email.emails:
+        # temp = models.Emails.objects(id=ele).first()
+        influencer = ele.influencerId
+        subject, content = utils.email_split(ele.emailContent)
+        influencer_list.append({
+            "name": influencer.name,
+            "follower": influencer.follower,
+            "country": influencer.country,
+            "email": influencer.email,
+            "reason": ele.reason,
+            "prompt": '---',
+            "emailContent": {
+                "subject": subject,
+                "content": content
+            }
+        })
+
+
+    return jsonify({
+        "products": product_list,
+        "influencers": influencer_list,
+        'influencerjobID': str(rewriting_email.influencerJobId.id)
+    })
 
 @socketio.on('connect')
 def on_connect():
