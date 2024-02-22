@@ -5,6 +5,7 @@ import mongoengine
 import json
 import re
 import time
+import requests
 
 from flask_cors import CORS
 from flask import jsonify
@@ -105,13 +106,22 @@ def update_data_influencers():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-@app.route('/get_data_influencers', methods=['GET'])
+@app.route('/get_data_influencers', methods=['POST'])
 def get_data_influencers():
+    data = request.get_json()
+    rowsPerpage = data["rowsPerPage"]
+    page = data["page"]
+    searchword = data["searchword"]
     collection = influencer_collection
-    data = list(collection.find())
-    # Convert ObjectId to string before JSON serialization
-    data_str = json_util.dumps(data)
-    return data_str
+
+    regex = re.compile(f'.*{searchword}.*', re.IGNORECASE)
+
+    results = collection.find({'$or': [{key: {'$regex': regex}} for key in collection.find_one()]}).skip(rowsPerpage * page).limit(rowsPerpage)
+    
+    result_list = [json_util.dumps(document) for document in results]
+    #result_list = [json_util.loads(document) for document in result_list]
+
+    return jsonify({'data': result_list, 'count': collection.count_documents({'$or': [{key: {'$regex': regex}} for key in collection.find_one()]})})
 
 @app.route('/get_country', methods=['GET'])
 def get_country():
@@ -550,6 +560,77 @@ def get_rewrite_emails():
         "influencers": influencer_list,
         'influencerjobID': str(rewriting_email.influencerJobId.id)
     })
+
+@app.route('/request_influencer_data', methods=['GET'])
+def request_influencer_data():
+    params = {
+        'grant_type': 'client_credentials',
+        'client_id': 'a7BYBTySB4h4CVTRP_JZQ',
+        'client_secret': 'vd5zejJegOPqtWidcWgGAo4GGTc5WAmrNzgiCBF1qQIhnJZrcJNoAyHuBFVVDUS5DYQAo8mJH2BHmjDKN2ielrCN12GUx82HCAcVa3ulBbbuuxUZs9p8_Cl9OlwxAv7k'
+    }
+    response = requests.get("https://terra.chinamade.com/auth/oauth2/client_token", params=params)
+    if response.status_code == 200:
+        response_json = response.json()
+        client_token = response_json["data"]["client_token"]
+        print(client_token)
+
+        headers = {
+            'X-REQUEST-ID': "123123",
+            'Content-Type': 'application/json',
+            'X-APPLICATION-NAME': 'ai-model2',
+            'X-ACCESS-TOKEN': client_token
+        }
+
+        pageNo = int(len(models.Influencers.objects()) / 100)
+        pagesize = 100
+        print("Influencer data uploading...")
+        while True:
+            url = "https://terra.chinamade.com/store/malls/fishpond/forai/pages/{}/pagesize/{}".format(pageNo, pagesize)
+            res = requests.get(url, headers=headers)
+            if res.status_code == 401:
+                response = requests.get("https://terra.chinamade.com/auth/oauth2/client_token", params=params)
+                if response.status_code == 200:
+                    response_json = response.json()
+                    client_token = response_json["data"]["client_token"]
+                    headers = {
+                        'X-REQUEST-ID': "123123",
+                        'Content-Type': 'application/json',
+                        'X-APPLICATION-NAME': 'ai-model2',
+                        'X-ACCESS-TOKEN': client_token
+                    }
+                    url = "https://terra.chinamade.com/store/malls/fishpond/forai/pages/{}/pagesize/{}".format(pageNo, pagesize)
+                    res = requests.get(url, headers=headers)
+            res_json = res.json()
+            # print(res_json)
+            influencers = res_json['data']['influencers']
+            for influencer in influencers:
+                if len(models.Influencers.objects(userid=influencer['influencerId'])) == 0:
+                    new_influencer = models.Influencers(
+                        name = influencer["influencerName"],
+                        userid = influencer["influencerId"],
+                        email = "",
+                        platform = influencer["platforms"],
+                        country = influencer["country"],
+                        hashtag = influencer["hastags"],
+                        profile = influencer["influencerProfile"],
+                        follower = influencer["followersQty"],
+                        total_video = influencer["totalVideosQty"],
+                        recent_30video_view = influencer["last30VideosViewsQty"],
+                        recent_30video_like = influencer["last30VideosLikesQty"],
+                        recent_30video_comment = influencer["last30VideosCommentsQty"],
+                        title_last_10video = influencer["last30VideosTitle"],
+                        profile_last_10video = influencer["last30VideosProflle"],
+                        saleVideo = influencer["saleVideo"],
+                        total_hashtag = [],
+                    )
+                    new_influencer.save()
+            if res_json['data']['hasNext'] is False:
+                break
+            pageNo = pageNo + 1
+        return jsonify({'success': True})
+    else:
+        print(f'Error: {response.status_code}')
+        return jsonify({'success': False})
 
 @socketio.on('connect')
 def on_connect():
