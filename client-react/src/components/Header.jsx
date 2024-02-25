@@ -15,6 +15,7 @@ const Header = (props) => {
             <div className="m-2 grid grid-cols-4 gap-2">
                 <Button variant='contained' onClick={() => navigate('/influencer-list')}>Influencers</Button>
                 <Button variant='contained' onClick={() => navigate('/product-list')}>Products</Button>
+                <Button variant='contained' onClick={() => navigate('/prompt-list')}>Prompts</Button>
             </div>
             <h3 className='border-b-2 border-[#000000] text-[20px]'>
                 {props.title}

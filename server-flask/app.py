@@ -76,6 +76,51 @@ def delete_data_products():
     model.delete()
     return "Product Data deleted"
 
+@app.route('/add_data_models', methods=['POST']) 
+def add_data_models(): 
+    if request.method == "POST":
+        data = request.get_json()
+        print(data)
+        newData = models.Models(**data).save()
+        return 'Model Data added to MongoDB'
+    else:
+        data = models.Models().get()
+        return jsonify(data)
+
+@app.route('/update_data_models', methods=['POST'])
+def update_data_models():
+    if request.method == "POST":
+        try:
+            data = request.get_json()  # Get JSON data from the request
+            model = models.Models.objects(id=data["_id"]).first()  # Retrieve the existing product
+
+            if not model:
+                return jsonify({'error': 'Model not found'}), 404
+
+            # Update the product fields with the new data
+            for key, value in data["data"].items():
+                setattr(model, key, value)
+
+            model.save()  # Save the updated product
+            return jsonify({'message': 'Model updated successfully', 'model': str(model)}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+@app.route('/get_data_models', methods=['GET'])
+def get_data_models():
+    collection = model_collection
+    data = list(collection.find())
+    data_str = json_util.dumps(data)
+    return data_str
+
+@app.route('/delete_data_models', methods=['DELETE'])
+def delete_data_models():
+    data = request.get_json()
+    _id = data["_id"]
+    model = models.Models.objects.get(id=_id)
+    model.delete()
+    return "Model Data deleted"
+
 @app.route('/add_data_influencers', methods=['POST']) 
 def add_data_influencers(): 
     # Get data from request 
@@ -137,6 +182,45 @@ def delete_data_influencers():
     print(influencer)
     influencer.delete()
     return "Influencer Data deleted"
+
+@app.route('/gen_hashtags', methods=['GET'])
+def get_hashtags():
+            
+    collection = influencer_collection
+    data = list(collection.find())
+    # Convert ObjectId to string before JSON serialization
+    influencer_profiles = [d["profile"] for d in data]
+    hashtags = [d["hashtag"] for d in data]
+    num_influencers = len(influencer_profiles)
+
+    influencer_hashtags = []
+    for i in range(num_influencers):
+        tags_list = [tag.strip('#') for tag in hashtags[i].split(', ')]
+        influencer_hashtags.append(tags_list)
+    print(len(influencer_hashtags[0]))
+    print(influencer_hashtags)
+
+    for i in range(num_influencers):
+        cnt = 25 - len(hashtags[i])
+        hashtags_prompt = "Give me top {} hashtags of this influencer profile. I need only exactly {} hashtags as answer.".format(cnt, cnt)
+        print('----------------------------------------------')
+        print(i)
+        while True:
+            respond = utils.generate_openai(hashtags_prompt, influencer_profiles[i])
+
+            hashtags_list = [word.strip("#") for word in respond.split() if word.startswith("#")]
+            if(len(hashtags_list) == 20):
+                influencer_hashtags[i].extend(hashtags_list)
+                break
+    
+    for index, document in enumerate(models.Influencers.objects):
+        new_field_name = 'total_hashtag'
+        
+        document[new_field_name] = influencer_hashtags[index]
+        
+        document.save()
+
+    return  "generated success"
 
 @app.route('/run', methods=['POST'])
 def run():

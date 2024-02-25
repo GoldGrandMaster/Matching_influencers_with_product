@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import CreateEmailGroup from './pages/CreateEmailGroup';
 import ProductList from './pages/ProductList';
 import InfluencerList from './pages/InfluencerList';
+import PromptList from './pages/PromptList';
 import MatchedInfluencers from './pages/MatchedInfluencers';
 import AiWriteEmail from './pages/AiWriteEmail';
 import AiRewriteEmail from './pages/AiRewriteEmail';
@@ -22,6 +23,10 @@ const router = createBrowserRouter(
     {
       path: "/influencer-list",
       element: <InfluencerList />
+    },
+    {
+      path: "/prompt-list",
+      element: <PromptList />
     },
     {
       path: "/create-email-group",

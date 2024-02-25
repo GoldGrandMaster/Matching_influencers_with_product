@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel, LinearProgress, MenuItem, Modal, OutlinedInput, Paper, Radio, RadioGroup, Select, Step, StepLabel, Stepper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel, LinearProgress, Menu, MenuItem, Modal, OutlinedInput, Paper, Radio, RadioGroup, Select, Step, StepLabel, Stepper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from '@mui/material';
 import React from 'react';
 import Header from '../../components/Header';
 import axios from 'axios'
@@ -39,12 +39,19 @@ const CreateEmailGroup = () => {
 	const [page, setPage] = React.useState(0);
 	const [addProductModal, setAddProductModal] = React.useState(false)
 	const [countries, setCountries] = React.useState(['All']);
+	const [prompts, setPrompts] = React.useState([]);
+	const [selectedprompt, setSelectedprompt] = React.useState({});
 
 	const navigate = useNavigate()
 	React.useEffect(() => {
 		axios.get(`${backend_url}/get_country`)
 			.then(res => {
 				setCountries(['All', ...res.data])
+			});
+		axios.get(`${backend_url}/get_data_models`)
+			.then(res => {
+				setPrompts([...res.data]);
+				setSelectedprompt(res.data[0]);
 			})
 	}, [])
 
@@ -80,9 +87,9 @@ const CreateEmailGroup = () => {
 		setMatchingModalState(true);
 		console.log(filterFields);
 		new Promise((resolve, reject) => {
-			axios.post(`${backend_url}/run`, { products: selectedrows.map(row => row['asin']), filterFields })
+			axios.post(`${backend_url}/run`, { products: selectedrows.map(row => row['asin']), filterFields, selectedprompt: selectedprompt._id['$oid'] })
 				.then(res => {
-					if(res.data.notfound)
+					if (res.data.notfound)
 						navigate('/matched-influencers/nomatched')
 					if (res.data.jobID)
 						navigate(`/matched-influencers/${res.data.jobID}`)
@@ -117,8 +124,10 @@ const CreateEmailGroup = () => {
 				</Select>
 			</div>
 		</div>
-		<div className='mt-4'>
-			<span className='mb-2 mr-5 text-[25px]'>Products</span>
+		<div className='my-4 border-b-2 border-[#000000]'>
+			<span className='font-bold text-[20px] mr-4'>
+				Products
+			</span>
 			<Button color='primary' variant='contained' size='small' onClick={() => setAddProductModal(true)}>Add Products</Button>
 			<Dialog open={addProductModal} fullWidth maxWidth="lg">
 				<DialogTitle>
@@ -278,6 +287,25 @@ const CreateEmailGroup = () => {
 						)
 					})
 			}
+		</div>
+		<div className='my-4 border-b-2 border-[#000000]'>
+			<span className='font-bold text-[20px]'>
+				Prompts
+			</span>
+		</div>
+		<div className='flex items-start'>
+			<Select
+				size='small'
+				className='w-[20vw] mr-2 mb-2'
+				MenuProps={MenuProps}
+				defaultValue={selectedprompt.user}
+				value={selectedprompt.user}
+				onChange={e => setSelectedprompt(prompts.filter(prompt => prompt.user == e.target.value)[0])}>
+				{
+					prompts.map(prompt => <MenuItem key={prompt.user} value={prompt.user}>{prompt.user}</MenuItem>)
+				}
+			</Select>
+			<TextField className="w-[60vw]" multiline minRows={5} value={selectedprompt.description} />
 		</div>
 		<div className='grid grid-cols-2 gap-4 p-5'>
 			<Button variant='outlined'>Cancel</Button>

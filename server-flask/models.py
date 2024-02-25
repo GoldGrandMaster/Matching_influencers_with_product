@@ -29,6 +29,16 @@ class Products(Document):
     sample = IntField()
     detail = StringField()
 
+class Models(Document):
+    user = StringField(max_length=60, required=True, unique=True)
+    influencer_hashtag_gen = StringField()
+    buyer_persona_gen = StringField()
+    persona_hashtag_gen = StringField()
+    reason_gen = StringField()
+    email_write = StringField()
+    email_rewrite = StringField()
+    description = StringField()
+
 class ReasonInfluencer(Document):
     influencer = ReferenceField(Influencers, reverse_delete_rule=CASCADE)
     reason = StringField()
