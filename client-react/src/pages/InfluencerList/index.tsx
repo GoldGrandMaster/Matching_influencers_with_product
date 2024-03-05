@@ -103,26 +103,26 @@ const columns: Column[] = [
     },
     {
         id: 'hashtag',
-        label: 'Hashtags',
+        label: 'Hashtag',
         minWidth: 70,
         align: 'center',
     },
     {
         id: 'profile',
-        label: 'Influencer Profile',
+        label: 'InfluencerProfile',
         minWidth: 200,
         align: 'center',
     },
     {
         id: 'follower',
-        label: 'Followers',
+        label: 'Follower',
         minWidth: 50,
         align: 'center',
         format: (value: number) => value.toLocaleString('en-US'),
     },
     {
         id: 'total_video',
-        label: 'Total Videos',
+        label: 'TotalVideo',
         // label: 'Size\u00a0(km\u00b2)',
         minWidth: 50,
         align: 'center',
@@ -130,39 +130,39 @@ const columns: Column[] = [
     },
     {
         id: 'recent_30video_view',
-        label: 'Recent 30 videos\' Views',
+        label: 'Last30VideosView',
         minWidth: 70,
         align: 'center',
         format: (value: number) => value.toLocaleString('en-US'),
     },
     {
         id: 'recent_30video_like',
-        label: 'Reccent 30 videos\' Likes',
+        label: 'Last30VideosLike',
         minWidth: 70,
         align: 'center',
         format: (value: number) => value.toFixed(2),
     },
     {
         id: 'recent_30video_comment',
-        label: 'Recent 30 videos\' Comments',
+        label: 'Last30VideosComment',
         minWidth: 70,
         align: 'center',
     },
     {
         id: 'title_last_10video',
-        label: 'Titles of Last 10 Videos',
+        label: 'Last30VideosTitle',
         minWidth: 300,
         align: 'center',
     },
     {
         id: 'profile_last_10video',
-        label: 'Profile of the Last 10 Videos',
+        label: 'Last30VideosProfile',
         minWidth: 300,
         align: 'center',
     },
     {
         id: 'total_hashtag',
-        label: 'Total Hashtags',
+        label: 'TotalHashtag',
         minWidth: 300,
         align: 'center',
     }
@@ -194,6 +194,7 @@ export default function StickyHeadTable() {
     const [dialInitData, setDialogInitData] = React.useState<Data>({});
     const [dialMode, setDialMode] = React.useState<string>("add");
     const [searchword, setSearchword] = React.useState<string>("");
+    const [count, setCount] = React.useState<number>(0);
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
@@ -224,23 +225,27 @@ export default function StickyHeadTable() {
 
     const getInfluencerData = () => {
         new Promise((resolve, reject) => {
-            axios.get(`${backend_url}/get_data_influencers`)
+            axios.post(`${backend_url}/get_data_influencers`, {
+                rowsPerPage, page, searchword
+            })
                 .then(res => {
                     let idx: number = 1;
-                    for (let row of res.data) {
-                        row["no"] = idx;
+                    let temp = []
+                    for (let row of res.data.data) {
+                        let d = JSON.parse(row)
+                        d["no"] = idx;
+                        temp.push(d)
                         idx++;
                     }
-                    setRows([...res.data]);
+                    console.log(temp)
+                    setRows([...temp]);
+                    setCount(res.data.count)
                 })
         })
     }
     const getInfluencerDataFromAPI = () => {
         new Promise((resolve, reject) => {
-            const clientId = 'a7BYBTySB4h4CVTRP_JZQ';
-            const clientSecret = 'vd5zejJegOPqtWidcWgGAo4GGTc5WAmrNzgiCBF1qQIhnJZrcJNoAyHuBFVVDUS5DYQAo8mJH2BHmjDKN2ielrCN12GUx82HCAcVa3ulBbbuuxUZs9p8_Cl9OlwxAv7k';
-            axios.get(`https://terra.chinamade.com/auth/oauth2/client_token?grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}`, {
-            })
+            axios.get(`${backend_url}/request_influencer_data`)
                 .then(res => {
                     console.log(res);
                 })
@@ -248,7 +253,7 @@ export default function StickyHeadTable() {
     }
     React.useEffect(() => {
         getInfluencerData();
-    }, [])
+    }, [searchword, rowsPerPage, page])
 
     return (
         <>
@@ -286,45 +291,29 @@ export default function StickyHeadTable() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {rows
-                                .filter((row: any) => {
-                                    for (let i of Object.values(row)) {
-                                        if (String(i).toUpperCase().search(searchword.toUpperCase()) >= 0)
-                                            return true;
-                                    }
-                                    return false;
-                                })
-                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                .map((row: any) => {
-                                    return (
-                                        <TableRow hover role="checkbox" tabIndex={-1} key={row.userid} onClick={() => handleRowClick(row["_id"]["$oid"])}>
-                                            {columns.map((column: Column, idx: number) => {
-                                                let value: any = row[column.id];
-                                                return (
-                                                    <TableCell key={column.id} align={column.align}>
-                                                        {column.format && typeof value === 'number'
-                                                            ? column.format(value)
-                                                            : column.id == "total_hashtag" && value ? value.join(", ") : value}
-                                                    </TableCell>
-                                                );
-                                            })}
-                                        </TableRow>
-                                    );
-                                })}
+                            {rows.map((row: any) => {
+                                return (
+                                    <TableRow hover role="checkbox" tabIndex={-1} key={row.userid} onClick={() => handleRowClick(row["_id"]["$oid"])}>
+                                        {columns.map((column: Column, idx: number) => {
+                                            let value: any = row[column.id];
+                                            return (
+                                                <TableCell key={column.id} align={column.align}>
+                                                    {column.format && typeof value === 'number'
+                                                        ? column.format(value)
+                                                        : column.id == "total_hashtag" && value ? value.join(", ") : column.id == 'hashtag' ? value.join(", ") : value}
+                                                </TableCell>
+                                            );
+                                        })}
+                                    </TableRow>
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 </TableContainer>
                 <TablePagination
                     rowsPerPageOptions={[10, 25, 100]}
                     component="div"
-                    count={rows
-                        .filter((row: any) => {
-                            for (let i of Object.values(row)) {
-                                if (String(i).toUpperCase().search(searchword.toUpperCase()) >= 0)
-                                    return true;
-                            }
-                            return false;
-                        }).length}
+                    count={count}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onPageChange={handleChangePage}

@@ -2,20 +2,21 @@ from mongoengine import Document, EmbeddedDocument,EmbeddedDocumentField, CASCAD
 from mongoengine import DateTimeField, StringField, ReferenceField, ListField, IntField, BooleanField
 
 class Influencers(Document):
-    name = StringField(max_length=60, required=True, unique=True)
-    userid = StringField(max_length=20, required=True, unique=True)
+    name = StringField(max_length=60, required=True)
+    userid = StringField(max_length=60, required=True, unique=True)
     email = StringField()
     platform = StringField(max_length=60)
     country = StringField(max_length=60)
-    hashtag = StringField()
+    hashtag = ListField()
     profile = StringField()
-    follower = StringField(max_length=20)
+    follower = IntField(default=0)
     total_video = IntField(default=0)
-    recent_30video_view = StringField(max_length=20)
-    recent_30video_like = StringField(max_length=20)
-    recent_30video_comment = StringField(max_length=20)
-    title_last_10video = StringField()
-    profile_last_10video = StringField()
+    recent_30video_view = IntField(default=0)
+    recent_30video_like = IntField(default=0)
+    recent_30video_comment = IntField(default=0)
+    title_last_10video = ListField()
+    profile_last_10video = ListField()
+    saleVideo = ListField()
     total_hashtag = ListField()
 
 class Products(Document):
@@ -27,6 +28,16 @@ class Products(Document):
     link = StringField()
     sample = IntField()
     detail = StringField()
+
+class Models(Document):
+    user = StringField(max_length=60, required=True, unique=True)
+    influencer_hashtag_gen = StringField()
+    buyer_persona_gen = StringField()
+    persona_hashtag_gen = StringField()
+    reason_gen = StringField()
+    email_write = StringField()
+    email_rewrite = StringField()
+    description = StringField()
 
 class ReasonInfluencer(Document):
     influencer = ReferenceField(Influencers, reverse_delete_rule=CASCADE)
