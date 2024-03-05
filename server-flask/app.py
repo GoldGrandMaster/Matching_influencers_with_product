@@ -185,40 +185,54 @@ def delete_data_influencers():
 
 @app.route('/gen_hashtags', methods=['GET'])
 def get_hashtags():
-            
+
     collection = influencer_collection
     data = list(collection.find())
+    print('~~~~~~~~~~~~~~~~~~~~~~~~')
+    print(len(data))
     # Convert ObjectId to string before JSON serialization
-    influencer_profiles = [d["profile"] for d in data]
-    hashtags = [d["hashtag"] for d in data]
-    num_influencers = len(influencer_profiles)
 
-    influencer_hashtags = []
-    for i in range(num_influencers):
-        tags_list = [tag.strip('#') for tag in hashtags[i].split(', ')]
-        influencer_hashtags.append(tags_list)
-    print(len(influencer_hashtags[0]))
-    print(influencer_hashtags)
+    num_influencers = len(data)
 
-    for i in range(num_influencers):
-        cnt = 25 - len(hashtags[i])
-        hashtags_prompt = "Give me top {} hashtags of this influencer profile. I need only exactly {} hashtags as answer.".format(cnt, cnt)
-        print('----------------------------------------------')
+    total_hashtag = []
+    for i in range(70, 80):
+        # if i > 10 :
+        #     break
+        # print(data[i]["profile"])
+        # print(data[i]["hashtag"])
+        # print(data[i]["profile_last_10video"])
+        influencer_profile = data[i]["profile"]
+        influencer_hashtag = data[i]["hashtag"]
+        if influencer_hashtag:
+            hashtag_string = ", ".join(influencer_hashtag)
+        else:
+            hashtag_string = ""
+        # print(hashtag_string)
+        influencer_last30videoprofile = data[i]["profile_last_10video"]
+        if influencer_last30videoprofile:
+            last30videos_string = ", ".join(influencer_last30videoprofile)
+        else:
+            last30videos_string = ""
+
+        hashtags_prompt = "This is information of current influencer's hashtag, influencer profile, influencer's last recently 30 video profile. Give me top 25 hashtags of this influencer. I need only exactly 25 hashtags as answer. There can be not English words as input. However I need only English hashtags.\n And the input data is not enough to create hashtags, please return only \"No matched\".\n If it's possible to create hashtags, give me only exactly 25 hashtags in English without any quote or comment like '#onthisday #entrepreneurmotivation #betheone #businessowner #growth #personaldevelopment #investinyourself #elegantdress #tiktokshop #fyp #glasscups #holistichealth #nontoxic #couplestiktok #tiptok #zenwater #alkalinewater #livingwater #watertest #experimenttime #fypage #stayhydrated #redbull #energydrink #caffeine' as result."
         print(i)
-        while True:
-            respond = utils.generate_openai(hashtags_prompt, influencer_profiles[i])
 
+        content = "hashtags:\n" + hashtag_string + "\n\n" + "profile:\n" + influencer_profile + "\n\n" + "last recently 30 videos profile:\n" + last30videos_string
+        print(content)
+        respond = utils.generate_openai(hashtags_prompt, content)
+        print(respond)
+        hashtags_list = []
+        if not respond == "No matched":
             hashtags_list = [word.strip("#") for word in respond.split() if word.startswith("#")]
-            if(len(hashtags_list) == 20):
-                influencer_hashtags[i].extend(hashtags_list)
-                break
-    
-    for index, document in enumerate(models.Influencers.objects):
-        new_field_name = 'total_hashtag'
-        
-        document[new_field_name] = influencer_hashtags[index]
-        
-        document.save()
+            total_hashtag.append(hashtags_list[:25])
+            print('total hashtags:')
+            print(hashtags_list[:25])
+        # print(total_hashtag[i])
+
+    # for index, document in enumerate(models.Influencers.objects):
+    #     new_field_name = 'total_hashtag'
+    #     document[new_field_name] = total_hashtag[index]
+    #     document.save()
 
     return  "generated success"
 

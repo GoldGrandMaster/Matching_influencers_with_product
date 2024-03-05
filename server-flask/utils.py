@@ -10,10 +10,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 load_dotenv()
 
 # Access API key using os.getenv
-api_key = os.getenv("OPENAI_API_KEY")
+# api_key = os.getenv("OPENAI_API_KEY")
+api_key = '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'
 
-# print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-# print(api_key)
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+print(api_key)
 
 # Set API key
 os.environ["OPENAI_API_KEY"] = api_key
